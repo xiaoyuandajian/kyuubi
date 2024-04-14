@@ -83,6 +83,7 @@
         <module>kyuubi-util</module>
         <module>kyuubi-util-scala</module>
         <module>kyuubi-zookeeper</module>
+        <module>externals/kyuubi-spark-connect-engine</module>
     </modules>
 
     <scm>
@@ -186,6 +187,7 @@
         <paimon.spark.binary.version>${spark.binary.version}</paimon.spark.binary.version>
         <parquet.version>1.10.1</parquet.version>
         <phoenix.version>6.0.0</phoenix.version>
+        <jedis.version>4.2.3</jedis.version>
         <postgresql.version>42.6.0</postgresql.version>
         <prometheus.version>0.16.0</prometheus.version>
         <protobuf.version>3.21.7</protobuf.version>
@@ -1356,6 +1358,13 @@
                 <artifactId>phoenix-queryserver-client</artifactId>
                 <version>${phoenix.version}</version>
             </dependency>
+
+            <dependency>
+                <groupId>redis.clients</groupId>
+                <artifactId>jedis</artifactId>
+                <version>${jedis.version}</version>
+            </dependency>
+
 
             <dependency>
                 <groupId>org.postgresql</groupId>

@@ -400,7 +400,7 @@ object KyuubiConf {
 
   object FrontendProtocols extends Enumeration {
     type FrontendProtocol = Value
-    val THRIFT_BINARY, THRIFT_HTTP, REST, MYSQL, TRINO = Value
+    val THRIFT_BINARY, THRIFT_HTTP, REST, MYSQL, TRINO, SPARK_CONNECT = Value
   }
 
   val FRONTEND_PROTOCOLS: ConfigEntry[Seq[String]] =
@@ -412,6 +412,7 @@ object KyuubiConf {
         " <li>REST - Kyuubi defined REST API(experimental).</li> " +
         " <li>MYSQL - MySQL compatible text protocol(experimental).</li> " +
         " <li>TRINO - Trino compatible http protocol(experimental).</li> " +
+        " <li>SPARK_CONNECT - Kyuubi compatible spark connect protocol(experimental).</li> " +
         "</ul>")
       .version("1.4.0")
       .stringConf
@@ -1059,6 +1060,22 @@ object KyuubiConf {
     .intConf
     .checkValue(p => p == 0 || (p > 1024 && p < 65535), "Invalid Port number")
     .createWithDefault(3309)
+
+  val FRONTEND_SPARK_CONNECT_BIND_HOST: ConfigEntry[Option[String]] =
+    buildConf("kyuubi.frontend.spark.connect.bind.host")
+      .doc("Hostname or IP of the machine on which to run the Spark Connect frontend service.")
+      .version("1.9.0")
+      .serverOnly
+      .fallbackConf(FRONTEND_BIND_HOST)
+
+  val FRONTEND_SPARK_CONNECT_BIND_PORT: ConfigEntry[Int] =
+    buildConf("kyuubi.frontend.spark.connect.bind.port")
+      .doc("Port of the machine on which to run the Spark Connect frontend service.")
+      .version("1.9.0")
+      .serverOnly
+      .intConf
+      .checkValue(p => p==0 || (p > 1024 && p < 65535), "Invalid Port number")
+      .createWithDefault(15002)
 
   /**
    * Specifies an upper bound on the number of Netty threads that Kyuubi requires by default.
