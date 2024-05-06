@@ -25,7 +25,7 @@ import "spark/connect/types.proto";
 import "spark/connect/catalog.proto";
 
 option java_multiple_files = true;
-option java_package = "org.apache.spark.connect.proto";
+option java_package = "org.apache.kyuubi.engine.spark.connect.proto";
 option go_package = "internal/generated";
 
 // The main [[Relation]] type. Fundamentally, a relation is a typed container

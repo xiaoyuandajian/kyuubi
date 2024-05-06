@@ -1074,7 +1074,7 @@ object KyuubiConf {
       .version("1.9.0")
       .serverOnly
       .intConf
-      .checkValue(p => p==0 || (p > 1024 && p < 65535), "Invalid Port number")
+      .checkValue(p => p == 0 || (p > 1024 && p < 65535), "Invalid Port number")
       .createWithDefault(15002)
 
   /**

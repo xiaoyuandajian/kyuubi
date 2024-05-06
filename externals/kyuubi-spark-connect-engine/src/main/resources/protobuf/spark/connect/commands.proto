@@ -25,7 +25,7 @@ import "spark/connect/relations.proto";
 package spark.connect;
 
 option java_multiple_files = true;
-option java_package = "org.apache.spark.connect.proto";
+option java_package = "org.apache.kyuubi.engine.spark.connect.proto";
 option go_package = "internal/generated";
 
 // A [[Command]] is an operation that is executed by the server that does not directly consume or

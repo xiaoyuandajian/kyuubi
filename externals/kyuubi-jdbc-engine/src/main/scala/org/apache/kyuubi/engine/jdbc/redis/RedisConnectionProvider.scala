@@ -16,14 +16,14 @@
  */
 package org.apache.kyuubi.engine.jdbc.redis
 
+import java.sql.Connection
+import java.util.Properties
+
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.engine.jdbc.mysql.MySQL8ConnectionProvider
 
-import java.sql.Connection
-import java.util.Properties
-
-class RedisConnectionProvider extends MySQL8ConnectionProvider{
+class RedisConnectionProvider extends MySQL8ConnectionProvider {
   override val name: String = classOf[RedisConnectionProvider].getSimpleName
 
   override def getConnection(kyuubiConf: KyuubiConf): Connection = {
@@ -39,19 +39,11 @@ class RedisConnectionProvider extends MySQL8ConnectionProvider{
       properties.setProperty("password", password.get)
     }
     info(s"Starting to get redis connection to $url")
-    val connection =
   }
 }
 
-class RedisConnection(val redisConnectionProvider: RedisConnectionProvider,
-                      val redisClient: RedisClient) extends Connection{
-
-}
-
-
-trait RedisClient extends AutoCloseable{
+trait RedisClient extends AutoCloseable {
   def setDatabase(db: String): Unit
   def getDatabase(): String
-
 
 }

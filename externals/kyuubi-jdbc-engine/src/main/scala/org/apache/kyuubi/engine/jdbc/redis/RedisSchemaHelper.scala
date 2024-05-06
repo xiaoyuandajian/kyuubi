@@ -16,6 +16,4 @@
  */
 package org.apache.kyuubi.engine.jdbc.redis
 
-class RedisSchemaHelper {
-
-}
+class RedisSchemaHelper {}
