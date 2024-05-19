@@ -30,7 +30,7 @@ class GrpcSeverableSuite extends KyuubiFunSuite {
   }
 
   test("invalid port") {
-    val conf = KyuubiConf().set(KyuubiConf.ENGINE_SPARK_CONNECT_GRPC_BINDING_PORT, 10000000)
+    val conf = KyuubiConf().set(KyuubiConf.ENGINE_SPARK_CONNECT_GRPC_BINDING_PORT, 1000)
     val server = new SimpleGrpcServer
     server.initialize(conf)
     server.start()
