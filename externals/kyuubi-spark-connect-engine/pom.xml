@@ -210,14 +210,6 @@
     </dependencies>
 
     <build>
-        <!-- Protobuf compilation for Spark Connect -->
-        <extensions>
-            <extension>
-                <groupId>kr.motd.maven</groupId>
-                <artifactId>os-maven-plugin</artifactId>
-                <version>1.6.2</version>
-            </extension>
-        </extensions>
         <plugins>
             <!-- Include a source dir depending on the Scala version -->
             <plugin>
@@ -469,6 +461,14 @@
         </plugins>
         <outputDirectory>target/scala-${scala.binary.version}/classes</outputDirectory>
         <testOutputDirectory>target/scala-${scala.binary.version}/test-classes</testOutputDirectory>
+        <!-- Protobuf compilation for Spark Connect -->
+        <extensions>
+            <extension>
+                <groupId>kr.motd.maven</groupId>
+                <artifactId>os-maven-plugin</artifactId>
+                <version>1.6.2</version>
+            </extension>
+        </extensions>
     </build>
 
     <profiles>
