@@ -330,7 +330,7 @@ object KyuubiConf {
     .doc("Operation will be closed when it's not accessed for this duration of time")
     .version("1.0.0")
     .timeConf
-    .createWithDefault(Duration.ofHours(3).toMillis)
+    .createWithDefault(10000)
 
   val CREDENTIALS_RENEWAL_INTERVAL: ConfigEntry[Long] =
     buildConf("kyuubi.credentials.renewal.interval")
@@ -2620,6 +2620,28 @@ object KyuubiConf {
       .version("1.6.1")
       .stringConf
       .createWithDefault("ENGINE")
+
+  val ENGINE_SPARK_CONNECT_GRPC_BINDING_PORT: ConfigEntry[Int] =
+    buildConf("kyuubi.engine.spark.connect.grpc.bind.port")
+      .doc("The port is used in spark connect frontendService start GrpcServer")
+      .version("1.9.0")
+      .intConf
+      .createWithDefault(15002)
+
+  val ENGINE_SPARK_CONNECT_GRPC_MAX_INBOUND_MESSAGE_SIZE: ConfigEntry[Int] =
+    buildConf("kyuubi.engine.spark.connect.grpc.max.inbound.message.size")
+      .doc("Sets the maximum inbound message in bytes size for the gRPC requests." +
+        "Requests with a larger payload will fail.")
+      .version("1.9.0")
+      .intConf
+      .createWithDefault(128 * 1024 * 1024)
+
+  val ENGINE_SPARK_CONNECT_GRPC_BINDING_HOST: ConfigEntry[Option[String]] =
+    buildConf("kyuubi.engine.spark.connect.grpc.bind.host")
+      .doc("Hostname or IP of the machine on which to run the grpc server in frontend service ")
+      .version("1.9.0")
+      .serverOnly
+      .fallbackConf(FRONTEND_BIND_HOST)
 
   val ENGINE_SPARK_SHOW_PROGRESS: ConfigEntry[Boolean] =
     buildConf("kyuubi.session.engine.spark.showProgress")
