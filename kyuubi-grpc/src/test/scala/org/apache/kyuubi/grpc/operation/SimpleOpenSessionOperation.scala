@@ -14,23 +14,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.kyuubi.grpc.event
+package org.apache.kyuubi.grpc.operation
 
-import org.apache.kyuubi.Logging
-import org.apache.kyuubi.grpc.events.SessionEventsManager
+import io.grpc.stub.StreamObserver
+
+import org.apache.kyuubi.grpc.proto.{TestOpenSessionRequest, TestOpenSessionResponse}
 import org.apache.kyuubi.grpc.session.SimpleGrpcSessionImpl
-import org.apache.kyuubi.grpc.utils.Clock
 
-class SimpleSessionEventsManager(session: SimpleGrpcSessionImpl, clock: Clock)
-  extends SessionEventsManager(session, clock) with Logging {
+class SimpleOpenSessionOperation(
+    grpcSession: SimpleGrpcSessionImpl,
+    shouldFail: Boolean,
+    request: TestOpenSessionRequest,
+    responseObserver: StreamObserver[TestOpenSessionResponse])
+  extends SimpleGrpcOperation(grpcSession, shouldFail) {
 
-  override def postStarted(): Unit = {
-    super.postStarted()
-    info("Session Event: post Started")
-  }
+  override protected def key: OperationKey = OperationKey(grpcSession.sessionKey)
 
-  override def postClosed(): Unit = {
-    info("Session Event: post Closed")
-    super.postClosed()
+  override def runInternal(): Unit = {
+    super.runInternal()
+    val builder = TestOpenSessionResponse.newBuilder()
+      .setSessionId(grpcSession.sessionKey.sessionId)
+    responseObserver.onNext(builder.build())
+    responseObserver.onCompleted()
   }
 }

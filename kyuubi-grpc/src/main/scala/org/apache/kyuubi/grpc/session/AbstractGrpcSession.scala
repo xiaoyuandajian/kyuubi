@@ -18,14 +18,9 @@ package org.apache.kyuubi.grpc.session
 
 import java.util
 
-import scala.collection.mutable
-import scala.collection.mutable.ArrayBuffer
-import scala.util.Random
-
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
-import org.apache.kyuubi.grpc.events.SessionEventsManager
 import org.apache.kyuubi.grpc.operation.{GrpcOperation, OperationKey}
-import org.apache.kyuubi.grpc.utils.{ProtoUtils, SystemClock}
+import org.apache.kyuubi.grpc.utils.ProtoUtils
 
 abstract class AbstractGrpcSession(
     val userId: String,

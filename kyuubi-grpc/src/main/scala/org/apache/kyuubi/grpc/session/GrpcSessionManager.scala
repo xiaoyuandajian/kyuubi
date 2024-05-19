@@ -16,17 +16,18 @@
  */
 package org.apache.kyuubi.grpc.session
 
+import java.io.IOException
+import java.nio.file.{Files, Paths}
 import java.util.concurrent._
+
 import scala.concurrent.duration.Duration
+
 import org.apache.kyuubi.{KyuubiSQLException, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.grpc.operation.GrpcOperationManager
 import org.apache.kyuubi.service.CompositeService
 import org.apache.kyuubi.util.ThreadUtils
-
-import java.io.IOException
-import java.nio.file.{Files, Paths}
 
 abstract class GrpcSessionManager(name: String) extends CompositeService(name) {
 
@@ -161,8 +162,6 @@ abstract class GrpcSessionManager(name: String) extends CompositeService(name) {
     assert(execPool != null)
     execPool.getQueue.size()
   }
-
-
 
   override def initialize(conf: KyuubiConf): Unit = {
     this.conf = conf

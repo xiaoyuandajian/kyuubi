@@ -14,23 +14,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.kyuubi.grpc.event
+package org.apache.kyuubi.grpc.service
 
-import org.apache.kyuubi.Logging
-import org.apache.kyuubi.grpc.events.OperationEventsManager
-import org.apache.kyuubi.grpc.operation.AbstractGrpcOperation
-import org.apache.kyuubi.grpc.utils.Clock
+class SimpleGrpcSeverable extends GrpcSeverable("SimpleGrpcSeverable") {
 
-class SimpleOperationEventsManager(operation: AbstractGrpcOperation, clock: Clock)
-  extends OperationEventsManager(operation, clock) with Logging {
+  override val backendService: SimpleGrpcBackendService = new SimpleGrpcBackendService
+  override val frontendServices: Seq[SimpleGrpcFrontendService] =
+    Seq(new SimpleGrpcFrontendService(this))
 
-  override def postStarted(): Unit = {
-    super.postStarted()
-    info("Operation Event: post Started")
-  }
-
-  override def postClosed(): Unit = {
-    info("Operation Event: post Closed")
-    super.postClosed()
+  override protected def stopServer(): Unit = {
+    info(s"stop")
   }
 }

@@ -16,8 +16,6 @@
  */
 package org.apache.kyuubi.grpc.utils
 
-import com.google.protobuf.Message
-
 object ProtoUtils {
 
   private val JOB_TAGS_SEP = ','

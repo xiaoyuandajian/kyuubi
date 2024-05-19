@@ -3,18 +3,17 @@
 
 package org.apache.kyuubi.grpc.proto;
 
-/**
- * Protobuf type {@code kyuubi.grpc.TestAddResponse}
- */
-public final class TestAddResponse extends
-    com.google.protobuf.GeneratedMessageV3 implements
+/** Protobuf type {@code kyuubi.grpc.TestAddResponse} */
+public final class TestAddResponse extends com.google.protobuf.GeneratedMessageV3
+    implements
     // @@protoc_insertion_point(message_implements:kyuubi.grpc.TestAddResponse)
     TestAddResponseOrBuilder {
-private static final long serialVersionUID = 0L;
+  private static final long serialVersionUID = 0L;
   // Use TestAddResponse.newBuilder() to construct.
   private TestAddResponse(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
     super(builder);
   }
+
   private TestAddResponse() {
     sessionId_ = "";
     serverSideSessionId_ = "";
@@ -23,33 +22,30 @@ private static final long serialVersionUID = 0L;
 
   @Override
   @SuppressWarnings({"unused"})
-  protected Object newInstance(
-      UnusedPrivateParameter unused) {
+  protected Object newInstance(UnusedPrivateParameter unused) {
     return new TestAddResponse();
   }
 
   @Override
-  public final com.google.protobuf.UnknownFieldSet
-  getUnknownFields() {
+  public final com.google.protobuf.UnknownFieldSet getUnknownFields() {
     return this.unknownFields;
   }
-  public static final com.google.protobuf.Descriptors.Descriptor
-      getDescriptor() {
+
+  public static final com.google.protobuf.Descriptors.Descriptor getDescriptor() {
     return TestCase.internal_static_kyuubi_grpc_TestAddResponse_descriptor;
   }
 
   @Override
-  protected FieldAccessorTable
-      internalGetFieldAccessorTable() {
+  protected FieldAccessorTable internalGetFieldAccessorTable() {
     return TestCase.internal_static_kyuubi_grpc_TestAddResponse_fieldAccessorTable
-        .ensureFieldAccessorsInitialized(
-            TestAddResponse.class, Builder.class);
+        .ensureFieldAccessorsInitialized(TestAddResponse.class, Builder.class);
   }
 
   public static final int SESSION_ID_FIELD_NUMBER = 1;
   private volatile Object sessionId_;
   /**
    * <code>string session_id = 1;</code>
+   *
    * @return The sessionId.
    */
   @Override
@@ -58,8 +54,7 @@ private static final long serialVersionUID = 0L;
     if (ref instanceof String) {
       return (String) ref;
     } else {
-      com.google.protobuf.ByteString bs = 
-          (com.google.protobuf.ByteString) ref;
+      com.google.protobuf.ByteString bs = (com.google.protobuf.ByteString) ref;
       String s = bs.toStringUtf8();
       sessionId_ = s;
       return s;
@@ -67,16 +62,14 @@ private static final long serialVersionUID = 0L;
   }
   /**
    * <code>string session_id = 1;</code>
+   *
    * @return The bytes for sessionId.
    */
   @Override
-  public com.google.protobuf.ByteString
-      getSessionIdBytes() {
+  public com.google.protobuf.ByteString getSessionIdBytes() {
     Object ref = sessionId_;
     if (ref instanceof String) {
-      com.google.protobuf.ByteString b = 
-          com.google.protobuf.ByteString.copyFromUtf8(
-              (String) ref);
+      com.google.protobuf.ByteString b = com.google.protobuf.ByteString.copyFromUtf8((String) ref);
       sessionId_ = b;
       return b;
     } else {
@@ -88,6 +81,7 @@ private static final long serialVersionUID = 0L;
   private volatile Object serverSideSessionId_;
   /**
    * <code>string server_side_session_id = 2;</code>
+   *
    * @return The serverSideSessionId.
    */
   @Override
@@ -96,8 +90,7 @@ private static final long serialVersionUID = 0L;
     if (ref instanceof String) {
       return (String) ref;
     } else {
-      com.google.protobuf.ByteString bs = 
-          (com.google.protobuf.ByteString) ref;
+      com.google.protobuf.ByteString bs = (com.google.protobuf.ByteString) ref;
       String s = bs.toStringUtf8();
       serverSideSessionId_ = s;
       return s;
@@ -105,16 +98,14 @@ private static final long serialVersionUID = 0L;
   }
   /**
    * <code>string server_side_session_id = 2;</code>
+   *
    * @return The bytes for serverSideSessionId.
    */
   @Override
-  public com.google.protobuf.ByteString
-      getServerSideSessionIdBytes() {
+  public com.google.protobuf.ByteString getServerSideSessionIdBytes() {
     Object ref = serverSideSessionId_;
     if (ref instanceof String) {
-      com.google.protobuf.ByteString b = 
-          com.google.protobuf.ByteString.copyFromUtf8(
-              (String) ref);
+      com.google.protobuf.ByteString b = com.google.protobuf.ByteString.copyFromUtf8((String) ref);
       serverSideSessionId_ = b;
       return b;
     } else {
@@ -126,6 +117,7 @@ private static final long serialVersionUID = 0L;
   private volatile Object operationId_;
   /**
    * <code>string operation_id = 3;</code>
+   *
    * @return The operationId.
    */
   @Override
@@ -134,8 +126,7 @@ private static final long serialVersionUID = 0L;
     if (ref instanceof String) {
       return (String) ref;
     } else {
-      com.google.protobuf.ByteString bs = 
-          (com.google.protobuf.ByteString) ref;
+      com.google.protobuf.ByteString bs = (com.google.protobuf.ByteString) ref;
       String s = bs.toStringUtf8();
       operationId_ = s;
       return s;
@@ -143,16 +134,14 @@ private static final long serialVersionUID = 0L;
   }
   /**
    * <code>string operation_id = 3;</code>
+   *
    * @return The bytes for operationId.
    */
   @Override
-  public com.google.protobuf.ByteString
-      getOperationIdBytes() {
+  public com.google.protobuf.ByteString getOperationIdBytes() {
     Object ref = operationId_;
     if (ref instanceof String) {
-      com.google.protobuf.ByteString b = 
-          com.google.protobuf.ByteString.copyFromUtf8(
-              (String) ref);
+      com.google.protobuf.ByteString b = com.google.protobuf.ByteString.copyFromUtf8((String) ref);
       operationId_ = b;
       return b;
     } else {
@@ -164,6 +153,7 @@ private static final long serialVersionUID = 0L;
   private long result_;
   /**
    * <code>int64 result = 4;</code>
+   *
    * @return The result.
    */
   @Override
@@ -172,6 +162,7 @@ private static final long serialVersionUID = 0L;
   }
 
   private byte memoizedIsInitialized = -1;
+
   @Override
   public final boolean isInitialized() {
     byte isInitialized = memoizedIsInitialized;
@@ -183,8 +174,7 @@ private static final long serialVersionUID = 0L;
   }
 
   @Override
-  public void writeTo(com.google.protobuf.CodedOutputStream output)
-                      throws java.io.IOException {
+  public void writeTo(com.google.protobuf.CodedOutputStream output) throws java.io.IOException {
     if (!com.google.protobuf.GeneratedMessageV3.isStringEmpty(sessionId_)) {
       com.google.protobuf.GeneratedMessageV3.writeString(output, 1, sessionId_);
     }
@@ -216,8 +206,7 @@ private static final long serialVersionUID = 0L;
       size += com.google.protobuf.GeneratedMessageV3.computeStringSize(3, operationId_);
     }
     if (result_ != 0L) {
-      size += com.google.protobuf.CodedOutputStream
-        .computeInt64Size(4, result_);
+      size += com.google.protobuf.CodedOutputStream.computeInt64Size(4, result_);
     }
     size += getUnknownFields().getSerializedSize();
     memoizedSize = size;
@@ -227,21 +216,17 @@ private static final long serialVersionUID = 0L;
   @Override
   public boolean equals(final Object obj) {
     if (obj == this) {
-     return true;
+      return true;
     }
     if (!(obj instanceof TestAddResponse)) {
       return super.equals(obj);
     }
     TestAddResponse other = (TestAddResponse) obj;
 
-    if (!getSessionId()
-        .equals(other.getSessionId())) return false;
-    if (!getServerSideSessionId()
-        .equals(other.getServerSideSessionId())) return false;
-    if (!getOperationId()
-        .equals(other.getOperationId())) return false;
-    if (getResult()
-        != other.getResult()) return false;
+    if (!getSessionId().equals(other.getSessionId())) return false;
+    if (!getServerSideSessionId().equals(other.getServerSideSessionId())) return false;
+    if (!getOperationId().equals(other.getOperationId())) return false;
+    if (getResult() != other.getResult()) return false;
     if (!getUnknownFields().equals(other.getUnknownFields())) return false;
     return true;
   }
@@ -260,133 +245,127 @@ private static final long serialVersionUID = 0L;
     hash = (37 * hash) + OPERATION_ID_FIELD_NUMBER;
     hash = (53 * hash) + getOperationId().hashCode();
     hash = (37 * hash) + RESULT_FIELD_NUMBER;
-    hash = (53 * hash) + com.google.protobuf.Internal.hashLong(
-        getResult());
+    hash = (53 * hash) + com.google.protobuf.Internal.hashLong(getResult());
     hash = (29 * hash) + getUnknownFields().hashCode();
     memoizedHashCode = hash;
     return hash;
   }
 
-  public static TestAddResponse parseFrom(
-      java.nio.ByteBuffer data)
+  public static TestAddResponse parseFrom(java.nio.ByteBuffer data)
       throws com.google.protobuf.InvalidProtocolBufferException {
     return PARSER.parseFrom(data);
   }
+
   public static TestAddResponse parseFrom(
-      java.nio.ByteBuffer data,
-      com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+      java.nio.ByteBuffer data, com.google.protobuf.ExtensionRegistryLite extensionRegistry)
       throws com.google.protobuf.InvalidProtocolBufferException {
     return PARSER.parseFrom(data, extensionRegistry);
   }
-  public static TestAddResponse parseFrom(
-      com.google.protobuf.ByteString data)
+
+  public static TestAddResponse parseFrom(com.google.protobuf.ByteString data)
       throws com.google.protobuf.InvalidProtocolBufferException {
     return PARSER.parseFrom(data);
   }
+
   public static TestAddResponse parseFrom(
       com.google.protobuf.ByteString data,
       com.google.protobuf.ExtensionRegistryLite extensionRegistry)
       throws com.google.protobuf.InvalidProtocolBufferException {
     return PARSER.parseFrom(data, extensionRegistry);
   }
+
   public static TestAddResponse parseFrom(byte[] data)
       throws com.google.protobuf.InvalidProtocolBufferException {
     return PARSER.parseFrom(data);
   }
+
   public static TestAddResponse parseFrom(
-      byte[] data,
-      com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+      byte[] data, com.google.protobuf.ExtensionRegistryLite extensionRegistry)
       throws com.google.protobuf.InvalidProtocolBufferException {
     return PARSER.parseFrom(data, extensionRegistry);
   }
-  public static TestAddResponse parseFrom(java.io.InputStream input)
-      throws java.io.IOException {
-    return com.google.protobuf.GeneratedMessageV3
-        .parseWithIOException(PARSER, input);
+
+  public static TestAddResponse parseFrom(java.io.InputStream input) throws java.io.IOException {
+    return com.google.protobuf.GeneratedMessageV3.parseWithIOException(PARSER, input);
   }
+
   public static TestAddResponse parseFrom(
-      java.io.InputStream input,
-      com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+      java.io.InputStream input, com.google.protobuf.ExtensionRegistryLite extensionRegistry)
       throws java.io.IOException {
-    return com.google.protobuf.GeneratedMessageV3
-        .parseWithIOException(PARSER, input, extensionRegistry);
+    return com.google.protobuf.GeneratedMessageV3.parseWithIOException(
+        PARSER, input, extensionRegistry);
   }
+
   public static TestAddResponse parseDelimitedFrom(java.io.InputStream input)
       throws java.io.IOException {
-    return com.google.protobuf.GeneratedMessageV3
-        .parseDelimitedWithIOException(PARSER, input);
+    return com.google.protobuf.GeneratedMessageV3.parseDelimitedWithIOException(PARSER, input);
   }
+
   public static TestAddResponse parseDelimitedFrom(
-      java.io.InputStream input,
-      com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+      java.io.InputStream input, com.google.protobuf.ExtensionRegistryLite extensionRegistry)
       throws java.io.IOException {
-    return com.google.protobuf.GeneratedMessageV3
-        .parseDelimitedWithIOException(PARSER, input, extensionRegistry);
+    return com.google.protobuf.GeneratedMessageV3.parseDelimitedWithIOException(
+        PARSER, input, extensionRegistry);
   }
-  public static TestAddResponse parseFrom(
-      com.google.protobuf.CodedInputStream input)
+
+  public static TestAddResponse parseFrom(com.google.protobuf.CodedInputStream input)
       throws java.io.IOException {
-    return com.google.protobuf.GeneratedMessageV3
-        .parseWithIOException(PARSER, input);
+    return com.google.protobuf.GeneratedMessageV3.parseWithIOException(PARSER, input);
   }
+
   public static TestAddResponse parseFrom(
       com.google.protobuf.CodedInputStream input,
       com.google.protobuf.ExtensionRegistryLite extensionRegistry)
       throws java.io.IOException {
-    return com.google.protobuf.GeneratedMessageV3
-        .parseWithIOException(PARSER, input, extensionRegistry);
+    return com.google.protobuf.GeneratedMessageV3.parseWithIOException(
+        PARSER, input, extensionRegistry);
   }
 
   @Override
-  public Builder newBuilderForType() { return newBuilder(); }
+  public Builder newBuilderForType() {
+    return newBuilder();
+  }
+
   public static Builder newBuilder() {
     return DEFAULT_INSTANCE.toBuilder();
   }
+
   public static Builder newBuilder(TestAddResponse prototype) {
     return DEFAULT_INSTANCE.toBuilder().mergeFrom(prototype);
   }
+
   @Override
   public Builder toBuilder() {
-    return this == DEFAULT_INSTANCE
-        ? new Builder() : new Builder().mergeFrom(this);
+    return this == DEFAULT_INSTANCE ? new Builder() : new Builder().mergeFrom(this);
   }
 
   @Override
-  protected Builder newBuilderForType(
-      BuilderParent parent) {
+  protected Builder newBuilderForType(BuilderParent parent) {
     Builder builder = new Builder(parent);
     return builder;
   }
-  /**
-   * Protobuf type {@code kyuubi.grpc.TestAddResponse}
-   */
-  public static final class Builder extends
-      com.google.protobuf.GeneratedMessageV3.Builder<Builder> implements
+  /** Protobuf type {@code kyuubi.grpc.TestAddResponse} */
+  public static final class Builder extends com.google.protobuf.GeneratedMessageV3.Builder<Builder>
+      implements
       // @@protoc_insertion_point(builder_implements:kyuubi.grpc.TestAddResponse)
       TestAddResponseOrBuilder {
-    public static final com.google.protobuf.Descriptors.Descriptor
-        getDescriptor() {
+    public static final com.google.protobuf.Descriptors.Descriptor getDescriptor() {
       return TestCase.internal_static_kyuubi_grpc_TestAddResponse_descriptor;
     }
 
     @Override
-    protected FieldAccessorTable
-        internalGetFieldAccessorTable() {
+    protected FieldAccessorTable internalGetFieldAccessorTable() {
       return TestCase.internal_static_kyuubi_grpc_TestAddResponse_fieldAccessorTable
-          .ensureFieldAccessorsInitialized(
-              TestAddResponse.class, Builder.class);
+          .ensureFieldAccessorsInitialized(TestAddResponse.class, Builder.class);
     }
 
     // Construct using org.apache.kyuubi.grpc.proto.TestAddResponse.newBuilder()
-    private Builder() {
+    private Builder() {}
 
-    }
-
-    private Builder(
-        BuilderParent parent) {
+    private Builder(BuilderParent parent) {
       super(parent);
-
     }
+
     @Override
     public Builder clear() {
       super.clear();
@@ -402,8 +381,7 @@ private static final long serialVersionUID = 0L;
     }
 
     @Override
-    public com.google.protobuf.Descriptors.Descriptor
-        getDescriptorForType() {
+    public com.google.protobuf.Descriptors.Descriptor getDescriptorForType() {
       return TestCase.internal_static_kyuubi_grpc_TestAddResponse_descriptor;
     }
 
@@ -436,38 +414,38 @@ private static final long serialVersionUID = 0L;
     public Builder clone() {
       return super.clone();
     }
+
     @Override
-    public Builder setField(
-        com.google.protobuf.Descriptors.FieldDescriptor field,
-        Object value) {
+    public Builder setField(com.google.protobuf.Descriptors.FieldDescriptor field, Object value) {
       return super.setField(field, value);
     }
+
     @Override
-    public Builder clearField(
-        com.google.protobuf.Descriptors.FieldDescriptor field) {
+    public Builder clearField(com.google.protobuf.Descriptors.FieldDescriptor field) {
       return super.clearField(field);
     }
+
     @Override
-    public Builder clearOneof(
-        com.google.protobuf.Descriptors.OneofDescriptor oneof) {
+    public Builder clearOneof(com.google.protobuf.Descriptors.OneofDescriptor oneof) {
       return super.clearOneof(oneof);
     }
+
     @Override
     public Builder setRepeatedField(
-        com.google.protobuf.Descriptors.FieldDescriptor field,
-        int index, Object value) {
+        com.google.protobuf.Descriptors.FieldDescriptor field, int index, Object value) {
       return super.setRepeatedField(field, index, value);
     }
+
     @Override
     public Builder addRepeatedField(
-        com.google.protobuf.Descriptors.FieldDescriptor field,
-        Object value) {
+        com.google.protobuf.Descriptors.FieldDescriptor field, Object value) {
       return super.addRepeatedField(field, value);
     }
+
     @Override
     public Builder mergeFrom(com.google.protobuf.Message other) {
       if (other instanceof TestAddResponse) {
-        return mergeFrom((TestAddResponse)other);
+        return mergeFrom((TestAddResponse) other);
       } else {
         super.mergeFrom(other);
         return this;
@@ -517,32 +495,37 @@ private static final long serialVersionUID = 0L;
             case 0:
               done = true;
               break;
-            case 10: {
-              sessionId_ = input.readStringRequireUtf8();
+            case 10:
+              {
+                sessionId_ = input.readStringRequireUtf8();
 
-              break;
-            } // case 10
-            case 18: {
-              serverSideSessionId_ = input.readStringRequireUtf8();
+                break;
+              } // case 10
+            case 18:
+              {
+                serverSideSessionId_ = input.readStringRequireUtf8();
 
-              break;
-            } // case 18
-            case 26: {
-              operationId_ = input.readStringRequireUtf8();
+                break;
+              } // case 18
+            case 26:
+              {
+                operationId_ = input.readStringRequireUtf8();
 
-              break;
-            } // case 26
-            case 32: {
-              result_ = input.readInt64();
+                break;
+              } // case 26
+            case 32:
+              {
+                result_ = input.readInt64();
 
-              break;
-            } // case 32
-            default: {
-              if (!super.parseUnknownField(input, extensionRegistry, tag)) {
-                done = true; // was an endgroup tag
-              }
-              break;
-            } // default:
+                break;
+              } // case 32
+            default:
+              {
+                if (!super.parseUnknownField(input, extensionRegistry, tag)) {
+                  done = true; // was an endgroup tag
+                }
+                break;
+              } // default:
           } // switch (tag)
         } // while (!done)
       } catch (com.google.protobuf.InvalidProtocolBufferException e) {
@@ -556,13 +539,13 @@ private static final long serialVersionUID = 0L;
     private Object sessionId_ = "";
     /**
      * <code>string session_id = 1;</code>
+     *
      * @return The sessionId.
      */
     public String getSessionId() {
       Object ref = sessionId_;
       if (!(ref instanceof String)) {
-        com.google.protobuf.ByteString bs =
-            (com.google.protobuf.ByteString) ref;
+        com.google.protobuf.ByteString bs = (com.google.protobuf.ByteString) ref;
         String s = bs.toStringUtf8();
         sessionId_ = s;
         return s;
@@ -572,15 +555,14 @@ private static final long serialVersionUID = 0L;
     }
     /**
      * <code>string session_id = 1;</code>
+     *
      * @return The bytes for sessionId.
      */
-    public com.google.protobuf.ByteString
-        getSessionIdBytes() {
+    public com.google.protobuf.ByteString getSessionIdBytes() {
       Object ref = sessionId_;
       if (ref instanceof String) {
-        com.google.protobuf.ByteString b = 
-            com.google.protobuf.ByteString.copyFromUtf8(
-                (String) ref);
+        com.google.protobuf.ByteString b =
+            com.google.protobuf.ByteString.copyFromUtf8((String) ref);
         sessionId_ = b;
         return b;
       } else {
@@ -589,41 +571,42 @@ private static final long serialVersionUID = 0L;
     }
     /**
      * <code>string session_id = 1;</code>
+     *
      * @param value The sessionId to set.
      * @return This builder for chaining.
      */
-    public Builder setSessionId(
-        String value) {
+    public Builder setSessionId(String value) {
       if (value == null) {
-    throw new NullPointerException();
-  }
-  
+        throw new NullPointerException();
+      }
+
       sessionId_ = value;
       onChanged();
       return this;
     }
     /**
      * <code>string session_id = 1;</code>
+     *
      * @return This builder for chaining.
      */
     public Builder clearSessionId() {
-      
+
       sessionId_ = getDefaultInstance().getSessionId();
       onChanged();
       return this;
     }
     /**
      * <code>string session_id = 1;</code>
+     *
      * @param value The bytes for sessionId to set.
      * @return This builder for chaining.
      */
-    public Builder setSessionIdBytes(
-        com.google.protobuf.ByteString value) {
+    public Builder setSessionIdBytes(com.google.protobuf.ByteString value) {
       if (value == null) {
-    throw new NullPointerException();
-  }
-  checkByteStringIsUtf8(value);
-      
+        throw new NullPointerException();
+      }
+      checkByteStringIsUtf8(value);
+
       sessionId_ = value;
       onChanged();
       return this;
@@ -632,13 +615,13 @@ private static final long serialVersionUID = 0L;
     private Object serverSideSessionId_ = "";
     /**
      * <code>string server_side_session_id = 2;</code>
+     *
      * @return The serverSideSessionId.
      */
     public String getServerSideSessionId() {
       Object ref = serverSideSessionId_;
       if (!(ref instanceof String)) {
-        com.google.protobuf.ByteString bs =
-            (com.google.protobuf.ByteString) ref;
+        com.google.protobuf.ByteString bs = (com.google.protobuf.ByteString) ref;
         String s = bs.toStringUtf8();
         serverSideSessionId_ = s;
         return s;
@@ -648,15 +631,14 @@ private static final long serialVersionUID = 0L;
     }
     /**
      * <code>string server_side_session_id = 2;</code>
+     *
      * @return The bytes for serverSideSessionId.
      */
-    public com.google.protobuf.ByteString
-        getServerSideSessionIdBytes() {
+    public com.google.protobuf.ByteString getServerSideSessionIdBytes() {
       Object ref = serverSideSessionId_;
       if (ref instanceof String) {
-        com.google.protobuf.ByteString b = 
-            com.google.protobuf.ByteString.copyFromUtf8(
-                (String) ref);
+        com.google.protobuf.ByteString b =
+            com.google.protobuf.ByteString.copyFromUtf8((String) ref);
         serverSideSessionId_ = b;
         return b;
       } else {
@@ -665,41 +647,42 @@ private static final long serialVersionUID = 0L;
     }
     /**
      * <code>string server_side_session_id = 2;</code>
+     *
      * @param value The serverSideSessionId to set.
      * @return This builder for chaining.
      */
-    public Builder setServerSideSessionId(
-        String value) {
+    public Builder setServerSideSessionId(String value) {
       if (value == null) {
-    throw new NullPointerException();
-  }
-  
+        throw new NullPointerException();
+      }
+
       serverSideSessionId_ = value;
       onChanged();
       return this;
     }
     /**
      * <code>string server_side_session_id = 2;</code>
+     *
      * @return This builder for chaining.
      */
     public Builder clearServerSideSessionId() {
-      
+
       serverSideSessionId_ = getDefaultInstance().getServerSideSessionId();
       onChanged();
       return this;
     }
     /**
      * <code>string server_side_session_id = 2;</code>
+     *
      * @param value The bytes for serverSideSessionId to set.
      * @return This builder for chaining.
      */
-    public Builder setServerSideSessionIdBytes(
-        com.google.protobuf.ByteString value) {
+    public Builder setServerSideSessionIdBytes(com.google.protobuf.ByteString value) {
       if (value == null) {
-    throw new NullPointerException();
-  }
-  checkByteStringIsUtf8(value);
-      
+        throw new NullPointerException();
+      }
+      checkByteStringIsUtf8(value);
+
       serverSideSessionId_ = value;
       onChanged();
       return this;
@@ -708,13 +691,13 @@ private static final long serialVersionUID = 0L;
     private Object operationId_ = "";
     /**
      * <code>string operation_id = 3;</code>
+     *
      * @return The operationId.
      */
     public String getOperationId() {
       Object ref = operationId_;
       if (!(ref instanceof String)) {
-        com.google.protobuf.ByteString bs =
-            (com.google.protobuf.ByteString) ref;
+        com.google.protobuf.ByteString bs = (com.google.protobuf.ByteString) ref;
         String s = bs.toStringUtf8();
         operationId_ = s;
         return s;
@@ -724,15 +707,14 @@ private static final long serialVersionUID = 0L;
     }
     /**
      * <code>string operation_id = 3;</code>
+     *
      * @return The bytes for operationId.
      */
-    public com.google.protobuf.ByteString
-        getOperationIdBytes() {
+    public com.google.protobuf.ByteString getOperationIdBytes() {
       Object ref = operationId_;
       if (ref instanceof String) {
-        com.google.protobuf.ByteString b = 
-            com.google.protobuf.ByteString.copyFromUtf8(
-                (String) ref);
+        com.google.protobuf.ByteString b =
+            com.google.protobuf.ByteString.copyFromUtf8((String) ref);
         operationId_ = b;
         return b;
       } else {
@@ -741,49 +723,51 @@ private static final long serialVersionUID = 0L;
     }
     /**
      * <code>string operation_id = 3;</code>
+     *
      * @param value The operationId to set.
      * @return This builder for chaining.
      */
-    public Builder setOperationId(
-        String value) {
+    public Builder setOperationId(String value) {
       if (value == null) {
-    throw new NullPointerException();
-  }
-  
+        throw new NullPointerException();
+      }
+
       operationId_ = value;
       onChanged();
       return this;
     }
     /**
      * <code>string operation_id = 3;</code>
+     *
      * @return This builder for chaining.
      */
     public Builder clearOperationId() {
-      
+
       operationId_ = getDefaultInstance().getOperationId();
       onChanged();
       return this;
     }
     /**
      * <code>string operation_id = 3;</code>
+     *
      * @param value The bytes for operationId to set.
      * @return This builder for chaining.
      */
-    public Builder setOperationIdBytes(
-        com.google.protobuf.ByteString value) {
+    public Builder setOperationIdBytes(com.google.protobuf.ByteString value) {
       if (value == null) {
-    throw new NullPointerException();
-  }
-  checkByteStringIsUtf8(value);
-      
+        throw new NullPointerException();
+      }
+      checkByteStringIsUtf8(value);
+
       operationId_ = value;
       onChanged();
       return this;
     }
 
-    private long result_ ;
+    private long result_;
     /**
      * <code>int64 result = 4;</code>
+     *
      * @return The result.
      */
     @Override
@@ -792,28 +776,30 @@ private static final long serialVersionUID = 0L;
     }
     /**
      * <code>int64 result = 4;</code>
+     *
      * @param value The result to set.
      * @return This builder for chaining.
      */
     public Builder setResult(long value) {
-      
+
       result_ = value;
       onChanged();
       return this;
     }
     /**
      * <code>int64 result = 4;</code>
+     *
      * @return This builder for chaining.
      */
     public Builder clearResult() {
-      
+
       result_ = 0L;
       onChanged();
       return this;
     }
+
     @Override
-    public final Builder setUnknownFields(
-        final com.google.protobuf.UnknownFieldSet unknownFields) {
+    public final Builder setUnknownFields(final com.google.protobuf.UnknownFieldSet unknownFields) {
       return super.setUnknownFields(unknownFields);
     }
 
@@ -823,12 +809,12 @@ private static final long serialVersionUID = 0L;
       return super.mergeUnknownFields(unknownFields);
     }
 
-
     // @@protoc_insertion_point(builder_scope:kyuubi.grpc.TestAddResponse)
   }
 
   // @@protoc_insertion_point(class_scope:kyuubi.grpc.TestAddResponse)
   private static final TestAddResponse DEFAULT_INSTANCE;
+
   static {
     DEFAULT_INSTANCE = new TestAddResponse();
   }
@@ -837,27 +823,27 @@ private static final long serialVersionUID = 0L;
     return DEFAULT_INSTANCE;
   }
 
-  private static final com.google.protobuf.Parser<TestAddResponse>
-      PARSER = new com.google.protobuf.AbstractParser<TestAddResponse>() {
-    @Override
-    public TestAddResponse parsePartialFrom(
-        com.google.protobuf.CodedInputStream input,
-        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
-        throws com.google.protobuf.InvalidProtocolBufferException {
-      Builder builder = newBuilder();
-      try {
-        builder.mergeFrom(input, extensionRegistry);
-      } catch (com.google.protobuf.InvalidProtocolBufferException e) {
-        throw e.setUnfinishedMessage(builder.buildPartial());
-      } catch (com.google.protobuf.UninitializedMessageException e) {
-        throw e.asInvalidProtocolBufferException().setUnfinishedMessage(builder.buildPartial());
-      } catch (java.io.IOException e) {
-        throw new com.google.protobuf.InvalidProtocolBufferException(e)
-            .setUnfinishedMessage(builder.buildPartial());
-      }
-      return builder.buildPartial();
-    }
-  };
+  private static final com.google.protobuf.Parser<TestAddResponse> PARSER =
+      new com.google.protobuf.AbstractParser<TestAddResponse>() {
+        @Override
+        public TestAddResponse parsePartialFrom(
+            com.google.protobuf.CodedInputStream input,
+            com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+            throws com.google.protobuf.InvalidProtocolBufferException {
+          Builder builder = newBuilder();
+          try {
+            builder.mergeFrom(input, extensionRegistry);
+          } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+            throw e.setUnfinishedMessage(builder.buildPartial());
+          } catch (com.google.protobuf.UninitializedMessageException e) {
+            throw e.asInvalidProtocolBufferException().setUnfinishedMessage(builder.buildPartial());
+          } catch (java.io.IOException e) {
+            throw new com.google.protobuf.InvalidProtocolBufferException(e)
+                .setUnfinishedMessage(builder.buildPartial());
+          }
+          return builder.buildPartial();
+        }
+      };
 
   public static com.google.protobuf.Parser<TestAddResponse> parser() {
     return PARSER;
@@ -872,6 +858,4 @@ private static final long serialVersionUID = 0L;
   public TestAddResponse getDefaultInstanceForType() {
     return DEFAULT_INSTANCE;
   }
-
 }
-

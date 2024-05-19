@@ -14,23 +14,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.kyuubi.grpc.event
+package org.apache.kyuubi.grpc.server
 
-import org.apache.kyuubi.Logging
-import org.apache.kyuubi.grpc.events.OperationEventsManager
-import org.apache.kyuubi.grpc.operation.AbstractGrpcOperation
-import org.apache.kyuubi.grpc.utils.Clock
+import org.apache.kyuubi.KyuubiFunSuite
+import org.apache.kyuubi.config.KyuubiConf
 
-class SimpleOperationEventsManager(operation: AbstractGrpcOperation, clock: Clock)
-  extends OperationEventsManager(operation, clock) with Logging {
-
-  override def postStarted(): Unit = {
-    super.postStarted()
-    info("Operation Event: post Started")
+class GrpcSeverableSuite extends KyuubiFunSuite {
+  ignore("GrpcSeverable") {
+    val severable1 = new SimpleGrpcServer()
+    val conf = KyuubiConf().set(KyuubiConf.ENGINE_SPARK_CONNECT_GRPC_BINDING_PORT, 0)
+    severable1.initialize(conf)
+    assert(severable1.getStartTime === 0)
+    assert(severable1.getConf === conf)
+    assert(severable1.frontendServices.head.connectionUrl.nonEmpty)
   }
 
-  override def postClosed(): Unit = {
-    info("Operation Event: post Closed")
-    super.postClosed()
+  test("invalid port") {
+    val conf = KyuubiConf().set(KyuubiConf.ENGINE_SPARK_CONNECT_GRPC_BINDING_PORT, 10000000)
+    val server = new SimpleGrpcServer
+    server.initialize(conf)
+    server.start()
   }
 }

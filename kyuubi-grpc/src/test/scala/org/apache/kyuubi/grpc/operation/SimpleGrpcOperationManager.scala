@@ -14,36 +14,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.kyuubi.grpc.service
+package org.apache.kyuubi.grpc.operation
+
 import io.grpc.stub.StreamObserver
 
-import org.apache.kyuubi.KyuubiException
 import org.apache.kyuubi.grpc.proto.{TestAddRequest, TestAddResponse, TestOpenSessionRequest, TestOpenSessionResponse}
-import org.apache.kyuubi.grpc.session.{SessionKey, SimpleGrpcSessionManager}
+import org.apache.kyuubi.grpc.session.SimpleGrpcSessionImpl
 
-class SimpleGrpcBackendService extends AbstractGrpcBackendService("simpleTest") {
-  override def grpcSessionManager: SimpleGrpcSessionManager = new SimpleGrpcSessionManager()
+class SimpleGrpcOperationManager extends GrpcOperationManager("SimpleGrpcOperationManager") {
 
-  override def start(): Unit = {
-    if (conf.getOption("kyuubi.test.backend.should.fail").exists(_.toBoolean)) {
-      throw new KyuubiException("should fail backend")
-    }
-    super.start()
-  }
-
-  def openSession(
-      key: SessionKey,
+  def newSimpleOpenSessionOperation(
+      session: SimpleGrpcSessionImpl,
+      shouldFail: Boolean,
       request: TestOpenSessionRequest,
-      responseObserver: StreamObserver[TestOpenSessionResponse]): Unit = {
-    grpcSessionManager.getOrCreateSession(key)
-      .openSession(key, request, responseObserver)
+      responseObserver: StreamObserver[TestOpenSessionResponse]): GrpcOperation = {
+    val operation = new SimpleOpenSessionOperation(session, shouldFail, request, responseObserver)
+    addOperation(operation)
   }
 
-  def add(
-      key: SessionKey,
+  def newSimpleAddOperation(
+      session: SimpleGrpcSessionImpl,
+      shouldFail: Boolean,
       request: TestAddRequest,
-      responseObserver: StreamObserver[TestAddResponse]): Unit = {
-    grpcSessionManager.getOrCreateSession(key)
-      .add(key, request, responseObserver)
+      responseObserver: StreamObserver[TestAddResponse]): GrpcOperation = {
+    val operation = new SimpleAddOperation(session, shouldFail, request, responseObserver)
+    addOperation(operation)
   }
 }

@@ -3,31 +3,34 @@
 
 package org.apache.kyuubi.grpc.proto;
 
-public interface TestOpenSessionRequestOrBuilder extends
+public interface TestOpenSessionRequestOrBuilder
+    extends
     // @@protoc_insertion_point(interface_extends:kyuubi.grpc.TestOpenSessionRequest)
     com.google.protobuf.MessageOrBuilder {
 
   /**
    * <code>string user_id = 1;</code>
+   *
    * @return The userId.
    */
   String getUserId();
   /**
    * <code>string user_id = 1;</code>
+   *
    * @return The bytes for userId.
    */
-  com.google.protobuf.ByteString
-      getUserIdBytes();
+  com.google.protobuf.ByteString getUserIdBytes();
 
   /**
    * <code>string session_id = 2;</code>
+   *
    * @return The sessionId.
    */
   String getSessionId();
   /**
    * <code>string session_id = 2;</code>
+   *
    * @return The bytes for sessionId.
    */
-  com.google.protobuf.ByteString
-      getSessionIdBytes();
+  com.google.protobuf.ByteString getSessionIdBytes();
 }

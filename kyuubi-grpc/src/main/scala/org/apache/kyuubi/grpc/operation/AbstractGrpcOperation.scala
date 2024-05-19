@@ -59,13 +59,11 @@ abstract class AbstractGrpcOperation(session: GrpcSession) extends GrpcOperation
     }
   }
 
-  override def cancel(): Unit
-
   override def close(): Unit
 
   override def grpcSession: GrpcSession = session
 
-  override def operationKey: OperationKey = operationKey
+  override def operationKey: OperationKey = key
 
 }
 

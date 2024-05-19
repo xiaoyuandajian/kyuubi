@@ -42,7 +42,11 @@ abstract class GrpcOperationManager(name: String) extends AbstractService(name) 
     super.initialize(conf)
   }
 
-  def close(opKey: OperationKey): Unit
+  def close(operationKey: OperationKey): Unit = {
+    val operation = keyToOperations.get(operationKey)
+    if (operation == null) throw KyuubiSQLException(s"Invalid $operationKey")
+    operation.close()
+  }
 
   final def addOperation(grpcOperation: GrpcOperation): GrpcOperation = synchronized {
     keyToOperations.put(grpcOperation.operationKey, grpcOperation)

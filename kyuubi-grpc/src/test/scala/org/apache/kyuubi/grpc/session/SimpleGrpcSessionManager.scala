@@ -15,15 +15,16 @@
  * limitations under the License.
  */
 package org.apache.kyuubi.grpc.session
-import org.apache.kyuubi.grpc.operation.GrpcOperationManager
+
+import org.apache.kyuubi.grpc.operation.SimpleGrpcOperationManager
 
 class SimpleGrpcSessionManager extends GrpcSessionManager("simpleTest") {
   override protected def isServer: Boolean = true
 
-  override def grpcOperationManager: GrpcOperationManager = new SimpleGrpcOperationManager()
+  override def grpcOperationManager: SimpleGrpcOperationManager = new SimpleGrpcOperationManager()
 
-  override def getOrCreateSession(key: SessionKey): GrpcSession = {
-
+  override def getOrCreateSession(key: SessionKey): SimpleGrpcSessionImpl = {
+    new SimpleGrpcSessionImpl(key.userId, this)
   }
 
 }

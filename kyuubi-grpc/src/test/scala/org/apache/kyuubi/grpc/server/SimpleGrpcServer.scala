@@ -14,23 +14,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.apache.kyuubi.grpc.event
+package org.apache.kyuubi.grpc.server
 
-import org.apache.kyuubi.Logging
-import org.apache.kyuubi.grpc.events.OperationEventsManager
-import org.apache.kyuubi.grpc.operation.AbstractGrpcOperation
-import org.apache.kyuubi.grpc.utils.Clock
+import org.apache.kyuubi.grpc.service.SimpleGrpcSeverable
 
-class SimpleOperationEventsManager(operation: AbstractGrpcOperation, clock: Clock)
-  extends OperationEventsManager(operation, clock) with Logging {
-
-  override def postStarted(): Unit = {
-    super.postStarted()
-    info("Operation Event: post Started")
-  }
-
-  override def postClosed(): Unit = {
-    info("Operation Event: post Closed")
-    super.postClosed()
-  }
-}
+class SimpleGrpcServer extends SimpleGrpcSeverable {}

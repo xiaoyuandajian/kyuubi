@@ -16,6 +16,33 @@
  */
 package org.apache.kyuubi.grpc.client
 
-class SimpleRpcClient {
+import java.util.UUID
+
+import io.grpc.ManagedChannel
+
+import org.apache.kyuubi.grpc.proto.{GrpcTestServiceGrpc, TestAddRequest, TestAddResponse, TestOpenSessionRequest, TestOpenSessionResponse}
+
+class SimpleRpcClient(val channel: ManagedChannel) {
+  private val DEFAULT_USER_ID = "kyuubi_grpc_test"
+  private val sessionId: String = UUID.randomUUID().toString
+  private val stub = GrpcTestServiceGrpc.newBlockingStub(channel)
+
+  def openSession(): TestOpenSessionResponse = {
+    val request = TestOpenSessionRequest.newBuilder()
+      .setUserId(DEFAULT_USER_ID)
+      .setSessionId(sessionId)
+      .build()
+    stub.testOpenSession(request)
+  }
+
+  def testAdd(firstNum: Int, secondNum: Int): TestAddResponse = {
+    val request = TestAddRequest.newBuilder()
+      .setUserId(DEFAULT_USER_ID)
+      .setSessionId(sessionId)
+      .setFirstNum(firstNum)
+      .setSecondNum(secondNum)
+      .build()
+    stub.testAdd(request)
+  }
 
 }

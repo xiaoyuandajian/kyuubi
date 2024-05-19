@@ -62,19 +62,19 @@ abstract class OperationEventsManager(operation: GrpcOperation, clock: Clock) {
 
   private def getProduceRowCount: Option[Long] = producedRowCount
 
-  protected def postStarted(): Unit = {
+  def postStarted(): Unit = {
     assertStatus(List(OperationStatus.Pending), OperationStatus.Started)
   }
 
-  protected def postAnalyzed(analyzedPlan: Option[Any] = None): Unit = {
+  def postAnalyzed(analyzedPlan: Option[Any] = None): Unit = {
     assertStatus(List(OperationStatus.Started, OperationStatus.Analyzed), OperationStatus.Analyzed)
   }
 
-  protected def postReadyForExecution(): Unit = {
+  def postReadyForExecution(): Unit = {
     assertStatus(List(OperationStatus.Analyzed), OperationStatus.ReadyForExecution)
   }
 
-  protected def postCanceled(): Unit = {
+  def postCanceled(): Unit = {
     assertStatus(
       List(
         OperationStatus.Started,
@@ -86,7 +86,7 @@ abstract class OperationEventsManager(operation: GrpcOperation, clock: Clock) {
     canceled = Some(true)
   }
 
-  protected def postFailed(errorMessage: String): Unit = {
+  def postFailed(errorMessage: String): Unit = {
     assertStatus(
       List(
         OperationStatus.Started,
@@ -97,7 +97,7 @@ abstract class OperationEventsManager(operation: GrpcOperation, clock: Clock) {
     error = Some(true)
   }
 
-  protected def postFinished(producedRowCountOpt: Option[Long] = None): Unit = {
+  def postFinished(producedRowCountOpt: Option[Long] = None): Unit = {
     assertStatus(
       List(
         OperationStatus.Started,
@@ -106,7 +106,7 @@ abstract class OperationEventsManager(operation: GrpcOperation, clock: Clock) {
     producedRowCount = producedRowCountOpt
   }
 
-  protected def postClosed(): Unit = {
+  def postClosed(): Unit = {
     assertStatus(
       List(
         OperationStatus.Finished,

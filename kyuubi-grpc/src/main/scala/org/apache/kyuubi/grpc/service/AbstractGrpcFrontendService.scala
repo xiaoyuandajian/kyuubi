@@ -19,14 +19,16 @@ package org.apache.kyuubi.grpc.service
 import java.net.{InetAddress, InetSocketAddress}
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
+
 import com.google.protobuf.MessageLite
 import io.grpc._
 import io.grpc.MethodDescriptor.PrototypeMarshaller
 import io.grpc.netty.NettyServerBuilder
 import io.grpc.protobuf.lite.ProtoLiteUtils
+
 import org.apache.kyuubi.{KyuubiException, Logging, Utils}
 import org.apache.kyuubi.config.KyuubiConf
-import org.apache.kyuubi.config.KyuubiConf.{ENGINE_SPARK_CONNECT_GRPC_BINDING_HOST, FRONTEND_ADVERTISED_HOST}
+import org.apache.kyuubi.config.KyuubiConf.{ENGINE_SPARK_CONNECT_GRPC_BINDING_PORT, FRONTEND_ADVERTISED_HOST}
 import org.apache.kyuubi.service.CompositeService
 import org.apache.kyuubi.util.NamedThreadFactory
 
@@ -36,8 +38,8 @@ abstract class AbstractGrpcFrontendService(name: String)
 
   private val started = new AtomicBoolean(false)
   protected var server: Server = _
-  protected def portNum: Int = _
-  protected def maxInboundMessageSize: Int = _
+  protected def portNum: Int = conf.get(ENGINE_SPARK_CONNECT_GRPC_BINDING_PORT)
+  protected def maxInboundMessageSize: Int = 1024
 
   protected def serverHost: Option[String]
   protected lazy val serverAddr: InetAddress =
@@ -61,7 +63,6 @@ abstract class AbstractGrpcFrontendService(name: String)
           s"Failed to initialize grpc frontend service on $portNum",
           e)
     }
-    discoveryService.foreach(addService)
     super.initialize(conf)
   }
 
@@ -129,6 +130,7 @@ abstract class AbstractGrpcFrontendService(name: String)
   override def run(): Unit = {
     try {
       server.start()
+      info("Grpc Server Start Success")
     } catch {
       case _: InterruptedException => error(s"$getName is interrupted")
       case t: Throwable =>
