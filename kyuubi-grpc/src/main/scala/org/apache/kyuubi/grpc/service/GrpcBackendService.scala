@@ -16,9 +16,9 @@
  */
 package org.apache.kyuubi.grpc.service
 
-import org.apache.kyuubi.grpc.session.GrpcSessionManager
+import org.apache.kyuubi.grpc.session.{GrpcSession, GrpcSessionManager}
 
 trait GrpcBackendService {
 
-  def grpcSessionManager: GrpcSessionManager
+  def grpcSessionManager: GrpcSessionManager[_ <: GrpcSession]
 }

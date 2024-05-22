@@ -21,14 +21,15 @@ import java.util.concurrent.atomic.AtomicBoolean
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.service.CompositeService
 
-abstract class GrpcSeverable(name: String) extends CompositeService(name) {
+abstract class GrpcSeverable[B <: AbstractGrpcBackendService, F <: AbstractGrpcFrontendService](
+    name: String) extends CompositeService(name) {
   private val started = new AtomicBoolean(false)
 
   var selfExited = false
 
-  val backendService: AbstractGrpcBackendService
+  val backendService: B
 
-  val frontendServices: Seq[AbstractGrpcFrontendService]
+  val frontendServices: Seq[F]
 
   override def initialize(conf: KyuubiConf): Unit = synchronized {
     this.conf = conf

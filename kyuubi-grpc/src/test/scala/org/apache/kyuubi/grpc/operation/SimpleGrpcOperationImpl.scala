@@ -16,15 +16,17 @@
  */
 package org.apache.kyuubi.grpc.operation
 
-import org.apache.kyuubi.{KyuubiSQLException, Logging}
 import org.apache.kyuubi.grpc.event.SimpleOperationEventsManager
 import org.apache.kyuubi.grpc.events.OperationEventsManager
 import org.apache.kyuubi.grpc.session.SimpleGrpcSessionImpl
 import org.apache.kyuubi.grpc.utils.SystemClock
 import org.apache.kyuubi.operation.log.OperationLog
+import org.apache.kyuubi.{KyuubiSQLException, Logging}
 
-abstract class SimpleGrpcOperation(grpcSession: SimpleGrpcSessionImpl, shouldFail: Boolean = false)
-  extends AbstractGrpcOperation(grpcSession) with Logging {
+class SimpleGrpcOperationImpl(
+    grpcSession: SimpleGrpcSessionImpl,
+    shouldFail: Boolean = false)
+  extends AbstractGrpcOperation[SimpleGrpcSessionImpl](grpcSession) with Logging {
 
   override def operationEventsManager: OperationEventsManager =
     new SimpleOperationEventsManager(this, new SystemClock())
@@ -55,4 +57,6 @@ abstract class SimpleGrpcOperation(grpcSession: SimpleGrpcSessionImpl, shouldFai
 
   override def isTimedOut: Boolean = false
   override def getOperationLog: Option[OperationLog] = None
+
+  override protected def key: OperationKey = OperationKey(grpcSession.sessionKey)
 }

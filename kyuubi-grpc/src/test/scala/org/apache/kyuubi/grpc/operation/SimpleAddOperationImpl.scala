@@ -18,23 +18,28 @@ package org.apache.kyuubi.grpc.operation
 
 import io.grpc.stub.StreamObserver
 
-import org.apache.kyuubi.grpc.proto.{TestOpenSessionRequest, TestOpenSessionResponse}
+import org.apache.kyuubi.grpc.proto.{TestAddRequest, TestAddResponse}
 import org.apache.kyuubi.grpc.session.SimpleGrpcSessionImpl
 
-class SimpleOpenSessionOperation(
+class SimpleAddOperationImpl(
     grpcSession: SimpleGrpcSessionImpl,
     shouldFail: Boolean,
-    request: TestOpenSessionRequest,
-    responseObserver: StreamObserver[TestOpenSessionResponse])
-  extends SimpleGrpcOperation(grpcSession, shouldFail) {
+    request: TestAddRequest,
+    responseObserver: StreamObserver[TestAddResponse])
+  extends SimpleGrpcOperationImpl(grpcSession, shouldFail) {
 
   override protected def key: OperationKey = OperationKey(grpcSession.sessionKey)
 
   override def runInternal(): Unit = {
     super.runInternal()
-    val builder = TestOpenSessionResponse.newBuilder()
-      .setSessionId(grpcSession.sessionKey.sessionId)
+    val result = request.getFirstNum + request.getSecondNum
+    val builder = TestAddResponse.newBuilder()
+      .setOperationId(operationKey.operationId)
+      .setSessionId(operationKey.sessionId)
+      .setServerSideSessionId(grpcSession.serverSessionId)
+      .setResult(result)
     responseObserver.onNext(builder.build())
     responseObserver.onCompleted()
   }
+
 }

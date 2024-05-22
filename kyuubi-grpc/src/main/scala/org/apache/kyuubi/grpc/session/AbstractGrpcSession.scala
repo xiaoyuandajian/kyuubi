@@ -22,9 +22,8 @@ import org.apache.kyuubi.{KyuubiSQLException, Logging}
 import org.apache.kyuubi.grpc.operation.{GrpcOperation, OperationKey}
 import org.apache.kyuubi.grpc.utils.ProtoUtils
 
-abstract class AbstractGrpcSession(
-    val userId: String,
-    val sessionManager: GrpcSessionManager) extends GrpcSession with Logging {
+abstract class AbstractGrpcSession[O <: GrpcOperation](
+    val userId: String) extends GrpcSession with Logging {
   override val sessionKey: SessionKey = SessionKey(userId)
 
   final private val _createTime: Long = System.currentTimeMillis()
@@ -40,7 +39,7 @@ abstract class AbstractGrpcSession(
 
   final private val opKeySet = new util.HashSet[OperationKey]
 
-  protected def runGrpcOperation(operation: GrpcOperation): OperationKey = {
+  protected def runGrpcOperation(operation: O): OperationKey = {
     if (closedTimeMs.isDefined) {
       throw KyuubiSQLException("Cannot build operation because the session is closed")
     }
@@ -55,10 +54,6 @@ abstract class AbstractGrpcSession(
         sessionManager.grpcOperationManager.close(operation.operationKey)
         throw e
     }
-  }
-
-  override def getOperation(operationKey: OperationKey): GrpcOperation = {
-    sessionManager.grpcOperationManager.getOperation(operationKey)
   }
 
   override def removeOperation(operationKey: OperationKey): Unit = {

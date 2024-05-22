@@ -19,17 +19,16 @@ package org.apache.kyuubi.grpc.session
 import java.io.IOException
 import java.nio.file.{Files, Paths}
 import java.util.concurrent._
-
 import scala.concurrent.duration.Duration
-
 import org.apache.kyuubi.{KyuubiSQLException, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
-import org.apache.kyuubi.grpc.operation.GrpcOperationManager
+import org.apache.kyuubi.grpc.operation.{GrpcOperation, GrpcOperationManager}
 import org.apache.kyuubi.service.CompositeService
 import org.apache.kyuubi.util.ThreadUtils
 
-abstract class GrpcSessionManager(name: String) extends CompositeService(name) {
+abstract class GrpcSessionManager[S <: GrpcSession](name: String)
+  extends CompositeService(name) {
 
   @volatile private var shutdown = false
 
@@ -55,7 +54,7 @@ abstract class GrpcSessionManager(name: String) extends CompositeService(name) {
     }
   }
 
-  private val sessionKeyToSession = new ConcurrentHashMap[SessionKey, GrpcSession]
+  private val sessionKeyToSession = new ConcurrentHashMap[SessionKey, S]
 
   @volatile private var _latestLogoutTime: Long = System.currentTimeMillis()
   def latestLogoutTime: Long = _latestLogoutTime
@@ -67,16 +66,16 @@ abstract class GrpcSessionManager(name: String) extends CompositeService(name) {
 
   private var execPool: ThreadPoolExecutor = _
 
-  def grpcOperationManager: GrpcOperationManager
+  def grpcOperationManager: GrpcOperationManager[_ <: GrpcOperation]
 
-  def getOrCreateSession(
-      key: SessionKey): GrpcSession
+  protected def getOrCreateSession(
+      key: SessionKey): S
 
-  def getSession(key: SessionKey): GrpcSession = {
+  def getSession(key: SessionKey): S = {
     getSessionOption(key).getOrElse(throw KyuubiSQLException(s"Invalid key $key"))
   }
 
-  private def getSessionOption(key: SessionKey): Option[GrpcSession] = {
+  private def getSessionOption(key: SessionKey): Option[S] = {
     Option(sessionKeyToSession.get(key))
   }
   def openSession(
@@ -101,12 +100,12 @@ abstract class GrpcSessionManager(name: String) extends CompositeService(name) {
     }
   }
 
-  protected def removeSession(key: SessionKey): Option[GrpcSession] = {
+  protected def removeSession(key: SessionKey): Option[S] = {
     val session = sessionKeyToSession.remove(key)
     Some(session)
   }
 
-  protected def shutdownSession(session: GrpcSession): Unit = {
+  protected def shutdownSession(session: S): Unit = {
     session.close()
   }
 
@@ -136,11 +135,11 @@ abstract class GrpcSessionManager(name: String) extends CompositeService(name) {
     })
   }
 
-  final protected def setSession(key: SessionKey, session: GrpcSession): Unit = {
+  final protected def setSession(key: SessionKey, session: S): Unit = {
     sessionKeyToSession.put(key, session)
   }
 
-  protected def logSessionCountInfo(session: GrpcSession, action: String): Unit = {
+  protected def logSessionCountInfo(session: S, action: String): Unit = {
     info(s"${session.sessionKey.userId}'s ${session.getClass.getSimpleName} with" +
       s" ${session.sessionKey.sessionId}${session.name.map("/" + _).getOrElse("")} is $action," +
       s" current opening sessions $getOpenSessionCount")

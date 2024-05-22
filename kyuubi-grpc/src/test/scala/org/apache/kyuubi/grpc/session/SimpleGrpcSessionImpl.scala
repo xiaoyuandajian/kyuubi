@@ -17,16 +17,17 @@
 package org.apache.kyuubi.grpc.session
 
 import scala.util.Random
-
 import io.grpc.stub.StreamObserver
-
 import org.apache.kyuubi.grpc.event.SimpleSessionEventsManager
 import org.apache.kyuubi.grpc.events.SessionEventsManager
+import org.apache.kyuubi.grpc.operation.{GrpcOperation, OperationKey, SimpleGrpcOperationImpl}
 import org.apache.kyuubi.grpc.proto.{TestAddRequest, TestAddResponse, TestOpenSessionRequest, TestOpenSessionResponse}
 import org.apache.kyuubi.grpc.utils.SystemClock
 
-class SimpleGrpcSessionImpl(userId: String, sessionManager: SimpleGrpcSessionManager)
-  extends AbstractGrpcSession(userId, sessionManager) {
+class SimpleGrpcSessionImpl(
+    userId: String,
+    sessionManager: SimpleGrpcSessionManager)
+  extends AbstractGrpcSession[SimpleGrpcOperationImpl](userId) {
   override def name: Option[String] = Some("SimpleGrpcSessionImpl")
 
   override def serverSessionId: String = Random.nextString(10)
@@ -51,4 +52,9 @@ class SimpleGrpcSessionImpl(userId: String, sessionManager: SimpleGrpcSessionMan
       .newSimpleAddOperation(this, false, request, responseObserver)
     runGrpcOperation(operation)
   }
+
+
+  override def getOperation[O <: GrpcOperation](operationKey: OperationKey): O = ???
+
+  override def sessionManager[SM <: GrpcSessionManager[_ <: GrpcSession]]: SM = sessionManager
 }

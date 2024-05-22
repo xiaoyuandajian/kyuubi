@@ -21,14 +21,16 @@ import io.grpc.stub.StreamObserver
 import org.apache.kyuubi.grpc.proto.{TestAddRequest, TestAddResponse, TestOpenSessionRequest, TestOpenSessionResponse}
 import org.apache.kyuubi.grpc.session.SimpleGrpcSessionImpl
 
-class SimpleGrpcOperationManager extends GrpcOperationManager("SimpleGrpcOperationManager") {
+class SimpleGrpcOperationManager
+  extends GrpcOperationManager[SimpleGrpcOperationImpl]("SimpleGrpcOperationManager") {
 
   def newSimpleOpenSessionOperation(
       session: SimpleGrpcSessionImpl,
       shouldFail: Boolean,
       request: TestOpenSessionRequest,
-      responseObserver: StreamObserver[TestOpenSessionResponse]): GrpcOperation = {
-    val operation = new SimpleOpenSessionOperation(session, shouldFail, request, responseObserver)
+      responseObserver: StreamObserver[TestOpenSessionResponse]): SimpleGrpcOperationImpl = {
+    val operation =
+      new SimpleOpenSessionOperationImpl(session, shouldFail, request, responseObserver)
     addOperation(operation)
   }
 
@@ -36,8 +38,8 @@ class SimpleGrpcOperationManager extends GrpcOperationManager("SimpleGrpcOperati
       session: SimpleGrpcSessionImpl,
       shouldFail: Boolean,
       request: TestAddRequest,
-      responseObserver: StreamObserver[TestAddResponse]): GrpcOperation = {
-    val operation = new SimpleAddOperation(session, shouldFail, request, responseObserver)
+      responseObserver: StreamObserver[TestAddResponse]): SimpleGrpcOperationImpl = {
+    val operation = new SimpleAddOperationImpl(session, shouldFail, request, responseObserver)
     addOperation(operation)
   }
 }

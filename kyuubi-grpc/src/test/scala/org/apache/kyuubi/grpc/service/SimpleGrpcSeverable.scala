@@ -16,7 +16,9 @@
  */
 package org.apache.kyuubi.grpc.service
 
-class SimpleGrpcSeverable extends GrpcSeverable("SimpleGrpcSeverable") {
+class SimpleGrpcSeverable
+  extends GrpcSeverable[SimpleGrpcBackendService, SimpleGrpcFrontendService](
+    "SimpleGrpcSeverable") {
 
   override val backendService: SimpleGrpcBackendService = new SimpleGrpcBackendService
   override val frontendServices: Seq[SimpleGrpcFrontendService] =

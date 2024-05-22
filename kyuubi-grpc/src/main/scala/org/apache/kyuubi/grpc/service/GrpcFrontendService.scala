@@ -22,7 +22,7 @@ trait GrpcFrontendService {
 
   def connectionUrl: String
 
-  val serverable: GrpcSeverable
+  val serverable: GrpcSeverable[_ <: GrpcBackendService, _ <: GrpcFrontendService]
 
   final def be: GrpcBackendService = serverable.backendService
 

@@ -18,13 +18,14 @@ package org.apache.kyuubi.grpc.session
 
 import org.apache.kyuubi.grpc.operation.SimpleGrpcOperationManager
 
-class SimpleGrpcSessionManager extends GrpcSessionManager("simpleTest") {
+class SimpleGrpcSessionManager
+  extends GrpcSessionManager[SimpleGrpcSessionImpl]("simpleTest") {
   override protected def isServer: Boolean = true
 
   override def grpcOperationManager: SimpleGrpcOperationManager = new SimpleGrpcOperationManager()
 
   override def getOrCreateSession(key: SessionKey): SimpleGrpcSessionImpl = {
-    new SimpleGrpcSessionImpl(key.userId, this)
+    new SimpleGrpcSessionImpl(key.userId, this[SimpleGrpcSessionImpl])
   }
 
 }

@@ -59,6 +59,6 @@ class SimpleGrpcFrontendService(grpcSeverable: SimpleGrpcSeverable)
     grpcBe.openSession(key, request, responseObserver)
   }
 
-  override val serverable: GrpcSeverable = grpcSeverable
+  override val serverable: SimpleGrpcSeverable = grpcSeverable
   override val discoveryService: Option[Service] = None
 }
