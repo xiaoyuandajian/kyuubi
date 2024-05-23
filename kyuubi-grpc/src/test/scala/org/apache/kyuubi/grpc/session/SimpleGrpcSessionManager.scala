@@ -25,7 +25,8 @@ class SimpleGrpcSessionManager
   override def grpcOperationManager: SimpleGrpcOperationManager = new SimpleGrpcOperationManager()
 
   override def getOrCreateSession(key: SessionKey): SimpleGrpcSessionImpl = {
-    new SimpleGrpcSessionImpl(key.userId, this[SimpleGrpcSessionImpl])
+    val session = new SimpleGrpcSessionImpl(key.userId, this)
+    session
   }
 
 }

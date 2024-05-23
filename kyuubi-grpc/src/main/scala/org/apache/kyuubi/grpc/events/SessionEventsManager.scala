@@ -32,7 +32,7 @@ abstract class SessionEventsManager(session: GrpcSession, clock: Clock) {
 
   private var _status: SessionStatus = SessionStatus.Pending
 
-  private def status_(sessionStatus: SessionStatus): Unit = {
+  protected def status_(sessionStatus: SessionStatus): Unit = {
     _status = sessionStatus
   }
 
@@ -40,10 +40,12 @@ abstract class SessionEventsManager(session: GrpcSession, clock: Clock) {
 
   def postStarted(): Unit = {
     assertStatus(List(SessionStatus.Pending), SessionStatus.Started)
+    status_(SessionStatus.Started)
   }
 
   def postClosed(): Unit = {
     assertStatus(List(SessionStatus.Started), SessionStatus.Closed)
+    status_(SessionStatus.Closed)
   }
 
   private def assertStatus(validStatuses: List[SessionStatus], eventStatus: SessionStatus): Unit = {
@@ -54,6 +56,5 @@ abstract class SessionEventsManager(session: GrpcSession, clock: Clock) {
            |is not within statuses $validStatuses for event $eventStatus
            |""".stripMargin)
     }
-    _status = eventStatus
   }
 }

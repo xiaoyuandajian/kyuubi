@@ -18,10 +18,10 @@ package org.apache.kyuubi.grpc.event
 
 import org.apache.kyuubi.Logging
 import org.apache.kyuubi.grpc.events.SessionEventsManager
-import org.apache.kyuubi.grpc.session.GrpcSession
+import org.apache.kyuubi.grpc.session.SimpleGrpcSessionImpl
 import org.apache.kyuubi.grpc.utils.Clock
 
-class SimpleSessionEventsManager(session: GrpcSession, clock: Clock)
+class SimpleSessionEventsManager(session: SimpleGrpcSessionImpl, clock: Clock)
   extends SessionEventsManager(session, clock) with Logging {
 
   override def postStarted(): Unit = {

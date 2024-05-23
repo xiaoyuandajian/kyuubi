@@ -56,7 +56,7 @@ class SimpleGrpcFrontendService(grpcSeverable: SimpleGrpcSeverable)
       request: TestOpenSessionRequest,
       responseObserver: StreamObserver[TestOpenSessionResponse]): Unit = {
     val key = new SessionKey(request.getUserId, request.getSessionId)
-    grpcBe.openSession(key, request, responseObserver)
+    grpcBe.openSessionTesr(key, request, responseObserver)
   }
 
   override val serverable: SimpleGrpcSeverable = grpcSeverable

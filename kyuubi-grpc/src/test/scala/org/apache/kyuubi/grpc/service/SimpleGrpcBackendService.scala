@@ -31,11 +31,11 @@ class SimpleGrpcBackendService extends AbstractGrpcBackendService("simpleTest") 
     super.start()
   }
 
-  def openSession(
+  def openSessionTesr(
       key: SessionKey,
       request: TestOpenSessionRequest,
       responseObserver: StreamObserver[TestOpenSessionResponse]): Unit = {
-    grpcSessionManager.getOrCreateSession(key)
+    grpcSessionManager.openSession(key)
       .openSession(key, request, responseObserver)
   }
 
@@ -43,7 +43,7 @@ class SimpleGrpcBackendService extends AbstractGrpcBackendService("simpleTest") 
       key: SessionKey,
       request: TestAddRequest,
       responseObserver: StreamObserver[TestAddResponse]): Unit = {
-    grpcSessionManager.getOrCreateSession(key)
+    grpcSessionManager.openSession(key)
       .add(key, request, responseObserver)
   }
 }

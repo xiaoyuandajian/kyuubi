@@ -16,12 +16,12 @@
  */
 package org.apache.kyuubi.grpc.operation
 
+import org.apache.kyuubi.{KyuubiSQLException, Logging}
 import org.apache.kyuubi.grpc.event.SimpleOperationEventsManager
 import org.apache.kyuubi.grpc.events.OperationEventsManager
 import org.apache.kyuubi.grpc.session.SimpleGrpcSessionImpl
 import org.apache.kyuubi.grpc.utils.SystemClock
 import org.apache.kyuubi.operation.log.OperationLog
-import org.apache.kyuubi.{KyuubiSQLException, Logging}
 
 class SimpleGrpcOperationImpl(
     grpcSession: SimpleGrpcSessionImpl,

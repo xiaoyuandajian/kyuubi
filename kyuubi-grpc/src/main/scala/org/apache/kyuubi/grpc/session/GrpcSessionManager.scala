@@ -23,11 +23,11 @@ import scala.concurrent.duration.Duration
 import org.apache.kyuubi.{KyuubiSQLException, Utils}
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
-import org.apache.kyuubi.grpc.operation.{GrpcOperation, GrpcOperationManager}
+import org.apache.kyuubi.grpc.operation.GrpcOperationManager
 import org.apache.kyuubi.service.CompositeService
 import org.apache.kyuubi.util.ThreadUtils
 
-abstract class GrpcSessionManager[S <: GrpcSession](name: String)
+abstract class GrpcSessionManager[S <: AbstractGrpcSession](name: String)
   extends CompositeService(name) {
 
   @volatile private var shutdown = false
@@ -66,7 +66,7 @@ abstract class GrpcSessionManager[S <: GrpcSession](name: String)
 
   private var execPool: ThreadPoolExecutor = _
 
-  def grpcOperationManager: GrpcOperationManager[_ <: GrpcOperation]
+  def grpcOperationManager: GrpcOperationManager
 
   protected def getOrCreateSession(
       key: SessionKey): S
@@ -79,7 +79,7 @@ abstract class GrpcSessionManager[S <: GrpcSession](name: String)
     Option(sessionKeyToSession.get(key))
   }
   def openSession(
-      key: SessionKey): SessionKey = {
+      key: SessionKey): S = {
     info(s"Opening grpc session for ${key.userId}")
     val session = getOrCreateSession(key)
     try {
@@ -87,7 +87,7 @@ abstract class GrpcSessionManager[S <: GrpcSession](name: String)
       session.open()
       setSession(key, session)
       logSessionCountInfo(session, "opened")
-      key
+      session
     } catch {
       case e: Exception =>
         try {

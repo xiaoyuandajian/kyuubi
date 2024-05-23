@@ -29,7 +29,7 @@ trait GrpcSession {
   def lastAccessTime: Long
   def lastIdleTime: Long
 
-  def sessionManager[SM <: GrpcSessionManager[_ <: GrpcSession]]: SM
+  def sessionManager: GrpcSessionManager[_ <: GrpcSession]
 
   def sessionEventsManager: SessionEventsManager
 
@@ -38,7 +38,7 @@ trait GrpcSession {
 
   def removeOperation(operationKey: OperationKey): Unit
 
-  def getOperation[O <: GrpcOperation](operationKey: OperationKey): O
+  def getOperation(operationKey: OperationKey): GrpcOperation
   def closeOperation(operationKey: OperationKey): Unit
 
   def interruptOperation(operationKey: OperationKey): Unit

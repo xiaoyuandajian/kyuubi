@@ -28,15 +28,15 @@ import org.apache.kyuubi.service.AbstractService
 /**
  * The [[GrpcOperationManager]] manages all the grpc operations during their lifecycle
  */
-abstract class GrpcOperationManager[O <: GrpcOperation](name: String)
+abstract class GrpcOperationManager(name: String)
   extends AbstractService(name) {
 
-  private val keyToOperations = new ConcurrentHashMap[OperationKey, O]
+  private val keyToOperations = new ConcurrentHashMap[OperationKey, GrpcOperation]
 
   protected def skipOperationLog: Boolean = false
   def getOperationCount: Int = keyToOperations.size()
 
-  def allOperations(): Iterable[O] = keyToOperations.values().asScala
+  def allOperations(): Iterable[GrpcOperation] = keyToOperations.values().asScala
 
   override def initialize(conf: KyuubiConf): Unit = {
     LogDivertAppender.initialize(skipOperationLog)
@@ -49,20 +49,20 @@ abstract class GrpcOperationManager[O <: GrpcOperation](name: String)
     operation.close()
   }
 
-  final def addOperation(grpcOperation: O): O = synchronized {
+  final def addOperation(grpcOperation: GrpcOperation): GrpcOperation = synchronized {
     keyToOperations.put(grpcOperation.operationKey, grpcOperation)
     grpcOperation
   }
 
   @throws[KyuubiSQLException]
-  final def getOperation(operationKey: OperationKey): O = {
+  final def getOperation(operationKey: OperationKey): GrpcOperation = {
     val operation = synchronized { keyToOperations.get(operationKey) }
     if (operation == null) throw KyuubiSQLException(s"Invalid $operationKey")
     operation
   }
 
   @throws[KyuubiSQLException]
-  final def removeOperation(operationKey: OperationKey): O = synchronized {
+  final def removeOperation(operationKey: OperationKey): GrpcOperation = synchronized {
     val operation = keyToOperations.remove(operationKey)
     if (operation == null) throw KyuubiSQLException(s"Invalid $operationKey")
     operation

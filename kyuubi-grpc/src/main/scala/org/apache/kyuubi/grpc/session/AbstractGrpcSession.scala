@@ -22,7 +22,7 @@ import org.apache.kyuubi.{KyuubiSQLException, Logging}
 import org.apache.kyuubi.grpc.operation.{GrpcOperation, OperationKey}
 import org.apache.kyuubi.grpc.utils.ProtoUtils
 
-abstract class AbstractGrpcSession[O <: GrpcOperation](
+abstract class AbstractGrpcSession(
     val userId: String) extends GrpcSession with Logging {
   override val sessionKey: SessionKey = SessionKey(userId)
 
@@ -39,7 +39,7 @@ abstract class AbstractGrpcSession[O <: GrpcOperation](
 
   final private val opKeySet = new util.HashSet[OperationKey]
 
-  protected def runGrpcOperation(operation: O): OperationKey = {
+  protected def runGrpcOperation(operation: GrpcOperation): OperationKey = {
     if (closedTimeMs.isDefined) {
       throw KyuubiSQLException("Cannot build operation because the session is closed")
     }

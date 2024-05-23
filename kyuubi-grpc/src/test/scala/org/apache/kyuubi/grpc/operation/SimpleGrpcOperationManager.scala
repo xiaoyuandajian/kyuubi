@@ -22,13 +22,13 @@ import org.apache.kyuubi.grpc.proto.{TestAddRequest, TestAddResponse, TestOpenSe
 import org.apache.kyuubi.grpc.session.SimpleGrpcSessionImpl
 
 class SimpleGrpcOperationManager
-  extends GrpcOperationManager[SimpleGrpcOperationImpl]("SimpleGrpcOperationManager") {
+  extends GrpcOperationManager("SimpleGrpcOperationManager") {
 
   def newSimpleOpenSessionOperation(
       session: SimpleGrpcSessionImpl,
       shouldFail: Boolean,
       request: TestOpenSessionRequest,
-      responseObserver: StreamObserver[TestOpenSessionResponse]): SimpleGrpcOperationImpl = {
+      responseObserver: StreamObserver[TestOpenSessionResponse]): GrpcOperation = {
     val operation =
       new SimpleOpenSessionOperationImpl(session, shouldFail, request, responseObserver)
     addOperation(operation)
@@ -38,7 +38,7 @@ class SimpleGrpcOperationManager
       session: SimpleGrpcSessionImpl,
       shouldFail: Boolean,
       request: TestAddRequest,
-      responseObserver: StreamObserver[TestAddResponse]): SimpleGrpcOperationImpl = {
+      responseObserver: StreamObserver[TestAddResponse]): GrpcOperation = {
     val operation = new SimpleAddOperationImpl(session, shouldFail, request, responseObserver)
     addOperation(operation)
   }

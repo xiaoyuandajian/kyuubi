@@ -16,21 +16,17 @@
  */
 package org.apache.kyuubi.grpc.operation
 
-import org.apache.kyuubi.config.KyuubiConf._
-import org.apache.kyuubi.grpc.session.GrpcSession
-import org.apache.kyuubi.{KyuubiSQLException, Logging, Utils}
-
 import java.util.concurrent.locks.ReentrantLock
+
+import org.apache.kyuubi.{KyuubiSQLException, Logging, Utils}
+import org.apache.kyuubi.grpc.session.GrpcSession
 
 abstract class AbstractGrpcOperation[S <: GrpcSession](session: S) extends GrpcOperation
   with Logging {
   final protected val opType: String = getClass.getSimpleName
   final protected val createTime = System.currentTimeMillis()
   protected def key: OperationKey
-  final private val operationTimeout: Long = {
-    session.sessionManager.getConf.get(OPERATION_IDLE_TIMEOUT)
-  }
-
+  final private val operationTimeout: Long = 1000
   private var lock: ReentrantLock = new ReentrantLock()
 
   protected def withLockRequired[T](block: => T): T = Utils.withLockRequired(lock)(block)

@@ -46,7 +46,7 @@ abstract class OperationEventsManager(operation: GrpcOperation, clock: Clock) {
 
   private def sessionStatus = session.sessionEventsManager.status
 
-  private var _status: OperationStatus = OperationStatus.Pending
+  protected var _status: OperationStatus = OperationStatus.Pending
 
   private var error = Option.empty[Boolean]
 
@@ -122,20 +122,20 @@ abstract class OperationEventsManager(operation: GrpcOperation, clock: Clock) {
   private def assertStatus(
       validStatuses: List[OperationStatus],
       eventStatus: OperationStatus): Unit = {
-    if (!validStatuses.contains(eventStatus)) {
+    if (!validStatuses.contains(status)) {
       throw new IllegalStateException(
         s"""
            |operationId: $operationId with status ${status}
            |is not within statuses $validStatuses for event $eventStatus
            |""".stripMargin)
     }
-    if (sessionStatus != SessionStatus.Started) {
-      throw new IllegalStateException(
-        s"""
-           |sessionId: $sessionId with status $sessionStatus
-           |is not Started for event $eventStatus
-           |""".stripMargin)
-    }
+//    if (sessionStatus != SessionStatus.Started) {
+//      throw new IllegalStateException(
+//        s"""
+//           |sessionId: $sessionId with status $sessionStatus
+//           |is not Started for event $eventStatus
+//           |""".stripMargin)
+//    }
     _status = eventStatus
   }
 }
