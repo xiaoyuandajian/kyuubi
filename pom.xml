@@ -67,6 +67,7 @@
         <module>externals/kyuubi-hive-sql-engine</module>
         <module>externals/kyuubi-jdbc-engine</module>
         <module>externals/kyuubi-spark-sql-engine</module>
+        <module>externals/kyuubi-spark-connect-engine</module>
         <module>externals/kyuubi-trino-engine</module>
         <module>integration-tests</module>
         <module>kyuubi-assembly</module>
@@ -462,6 +463,12 @@
             <dependency>
                 <groupId>org.apache.spark</groupId>
                 <artifactId>spark-sql_${scala.binary.version}</artifactId>
+                <version>${spark.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.apache.spark</groupId>
+                <artifactId>spark-connect-common_${scala.binary.version}</artifactId>
                 <version>${spark.version}</version>
             </dependency>
 
