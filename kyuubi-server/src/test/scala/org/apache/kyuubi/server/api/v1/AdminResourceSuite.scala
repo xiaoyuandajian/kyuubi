@@ -33,7 +33,7 @@ import org.apache.kyuubi.client.api.v1.dto._
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf._
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_SESSION_CONNECTION_URL_KEY
-import org.apache.kyuubi.engine.{ApplicationManagerInfo, ApplicationState, EngineRef, KyuubiApplicationManager}
+import org.apache.kyuubi.engine.{ApplicationManagerInfo, ApplicationState, EngineRef, KubernetesInfo, KyuubiApplicationManager}
 import org.apache.kyuubi.engine.EngineType.SPARK_SQL
 import org.apache.kyuubi.engine.ShareLevel.{CONNECTION, GROUP, USER}
 import org.apache.kyuubi.ha.HighAvailabilityConf
@@ -44,6 +44,7 @@ import org.apache.kyuubi.server.KyuubiRestFrontendService
 import org.apache.kyuubi.server.http.util.HttpAuthUtils
 import org.apache.kyuubi.server.http.util.HttpAuthUtils.AUTHORIZATION_HEADER
 import org.apache.kyuubi.service.authentication.AnonymousAuthenticationProviderImpl
+import org.apache.kyuubi.session.SessionType
 import org.apache.kyuubi.shaded.hive.service.rpc.thrift.TProtocolVersion.HIVE_CLI_SERVICE_PROTOCOL_V2
 
 class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
@@ -89,7 +90,7 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
       .request()
       .header(AUTHORIZATION_HEADER, HttpAuthUtils.basicAuthorizationHeader("admin002"))
       .post(null)
-    assert(response.getStatus === 405)
+    assert(response.getStatus === 403)
   }
 
   test("refresh user defaults config of the kyuubi server") {
@@ -230,6 +231,42 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     operations = response.readEntity(classOf[Seq[OperationData]])
     assert(response.getStatus === 200)
     assert(operations.size == 1)
+
+    response = webTarget.path("api/v1/admin/sessions")
+      .queryParam("sessionType", SessionType.INTERACTIVE.toString)
+      .request()
+      .header(AUTHORIZATION_HEADER, HttpAuthUtils.basicAuthorizationHeader(Utils.currentUser))
+      .get()
+    sessions = response.readEntity(classOf[Seq[SessionData]])
+    assert(response.getStatus === 200)
+    assert(sessions.size > 0)
+
+    response = webTarget.path("api/v1/admin/sessions")
+      .queryParam("sessionType", SessionType.BATCH.toString)
+      .request()
+      .header(AUTHORIZATION_HEADER, HttpAuthUtils.basicAuthorizationHeader(Utils.currentUser))
+      .get()
+    sessions = response.readEntity(classOf[Seq[SessionData]])
+    assert(response.getStatus === 200)
+    assert(sessions.size == 0)
+
+    response = webTarget.path("api/v1/admin/operations")
+      .queryParam("sessionType", SessionType.INTERACTIVE.toString)
+      .request()
+      .header(AUTHORIZATION_HEADER, HttpAuthUtils.basicAuthorizationHeader(Utils.currentUser))
+      .get()
+    operations = response.readEntity(classOf[Seq[OperationData]])
+    assert(response.getStatus === 200)
+    assert(operations.size > 0)
+
+    response = webTarget.path("api/v1/admin/operations")
+      .queryParam("sessionType", SessionType.BATCH.toString)
+      .request()
+      .header(AUTHORIZATION_HEADER, HttpAuthUtils.basicAuthorizationHeader(Utils.currentUser))
+      .get()
+    operations = response.readEntity(classOf[Seq[OperationData]])
+    assert(response.getStatus === 200)
+    assert(operations.size == 0)
   }
 
   test("list/close operations") {
@@ -264,6 +301,54 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     assert(!operations.map(op => op.getIdentifier).contains(operation.identifier.toString))
   }
 
+  test("force to kill engine - user share level") {
+    val id = UUID.randomUUID().toString
+    conf.set(KyuubiConf.ENGINE_SHARE_LEVEL, USER.toString)
+    conf.set(KyuubiConf.ENGINE_TYPE, SPARK_SQL.toString)
+    conf.set(KyuubiConf.FRONTEND_THRIFT_BINARY_BIND_PORT, 0)
+    conf.set(HighAvailabilityConf.HA_NAMESPACE, "kyuubi_test")
+    conf.set(KyuubiConf.GROUP_PROVIDER, "hadoop")
+
+    val engine =
+      new EngineRef(
+        conf.clone,
+        Utils.currentUser,
+        true,
+        PluginLoader.loadGroupProvider(conf),
+        id,
+        null)
+
+    val engineSpace = DiscoveryPaths.makePath(
+      s"kyuubi_test_${KYUUBI_VERSION}_USER_SPARK_SQL",
+      Utils.currentUser,
+      "default")
+
+    withDiscoveryClient(conf) { client =>
+      engine.getOrCreate(client)
+      assert(client.pathExists(engineSpace))
+      assert(client.getChildren(engineSpace).size == 1)
+
+      val response = webTarget.path("api/v1/admin/engine")
+        .queryParam("sharelevel", "USER")
+        .queryParam("type", "spark_sql")
+        .queryParam("kill", "true")
+        .request(MediaType.APPLICATION_JSON_TYPE)
+        .header(AUTHORIZATION_HEADER, HttpAuthUtils.basicAuthorizationHeader(Utils.currentUser))
+        .delete()
+
+      assert(response.getStatus === 200)
+      eventually(timeout(5.seconds), interval(100.milliseconds)) {
+        assert(client.getChildren(engineSpace).isEmpty, s"refId same with $id?")
+      }
+
+      eventually(timeout(30.seconds), interval(100.milliseconds)) {
+        val appMgrInfo = ApplicationManagerInfo(None, KubernetesInfo(None, None))
+        assert(engineMgr.getApplicationInfo(appMgrInfo, id)
+          .exists(_.state == ApplicationState.NOT_FOUND))
+      }
+    }
+  }
+
   test("delete engine - user share level") {
     val id = UUID.randomUUID().toString
     conf.set(KyuubiConf.ENGINE_SHARE_LEVEL, USER.toString)
@@ -273,7 +358,13 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     conf.set(KyuubiConf.GROUP_PROVIDER, "hadoop")
 
     val engine =
-      new EngineRef(conf.clone, Utils.currentUser, PluginLoader.loadGroupProvider(conf), id, null)
+      new EngineRef(
+        conf.clone,
+        Utils.currentUser,
+        true,
+        PluginLoader.loadGroupProvider(conf),
+        id,
+        null)
 
     val engineSpace = DiscoveryPaths.makePath(
       s"kyuubi_test_${KYUUBI_VERSION}_USER_SPARK_SQL",
@@ -317,7 +408,13 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     conf.set(KyuubiConf.GROUP_PROVIDER, "hadoop")
 
     val engine =
-      new EngineRef(conf.clone, Utils.currentUser, PluginLoader.loadGroupProvider(conf), id, null)
+      new EngineRef(
+        conf.clone,
+        Utils.currentUser,
+        true,
+        PluginLoader.loadGroupProvider(conf),
+        id,
+        null)
 
     val engineSpace = DiscoveryPaths.makePath(
       s"kyuubi_test_${KYUUBI_VERSION}_GROUP_SPARK_SQL",
@@ -363,7 +460,13 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
 
     val id = UUID.randomUUID().toString
     val engine =
-      new EngineRef(conf.clone, Utils.currentUser, PluginLoader.loadGroupProvider(conf), id, null)
+      new EngineRef(
+        conf.clone,
+        Utils.currentUser,
+        true,
+        PluginLoader.loadGroupProvider(conf),
+        id,
+        null)
     val engineSpace = DiscoveryPaths.makePath(
       s"kyuubi_test_${KYUUBI_VERSION}_CONNECTION_SPARK_SQL",
       Utils.currentUser,
@@ -398,9 +501,15 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     conf.set(KyuubiConf.GROUP_PROVIDER, "hadoop")
 
     // In EngineRef, when use hive.server2.proxy.user or kyuubi.session.proxy.user
-    // the user is the proxyUser, and in our test it is normalUser
+    // the sessionUser is the proxyUser, and in our test it is normalUser
     val engine =
-      new EngineRef(conf.clone, user = normalUser, PluginLoader.loadGroupProvider(conf), id, null)
+      new EngineRef(
+        conf.clone,
+        sessionUser = normalUser,
+        true,
+        PluginLoader.loadGroupProvider(conf),
+        id,
+        null)
 
     // so as the firstChild in engineSpace we use normalUser
     val engineSpace = DiscoveryPaths.makePath(
@@ -433,19 +542,19 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
 
       // use proxyUser
       val deleteEngineResponse1 = runDeleteEngine(Option(normalUser), None)
-      assert(deleteEngineResponse1.getStatus === 405)
+      assert(deleteEngineResponse1.getStatus === 403)
       val errorMessage = s"Failed to validate proxy privilege of anonymous for $normalUser"
       assert(deleteEngineResponse1.readEntity(classOf[String]).contains(errorMessage))
 
       // it should be the same behavior as hive.server2.proxy.user
       val deleteEngineResponse2 = runDeleteEngine(None, Option(normalUser))
-      assert(deleteEngineResponse2.getStatus === 405)
+      assert(deleteEngineResponse2.getStatus === 403)
       assert(deleteEngineResponse2.readEntity(classOf[String]).contains(errorMessage))
 
       // when both set, proxyUser takes precedence
       val deleteEngineResponse3 =
         runDeleteEngine(Option(normalUser), Option(s"${normalUser}HiveServer2"))
-      assert(deleteEngineResponse3.getStatus === 405)
+      assert(deleteEngineResponse3.getStatus === 403)
       assert(deleteEngineResponse3.readEntity(classOf[String]).contains(errorMessage))
     }
   }
@@ -459,7 +568,13 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     conf.set(KyuubiConf.GROUP_PROVIDER, "hadoop")
 
     val engine =
-      new EngineRef(conf.clone, Utils.currentUser, PluginLoader.loadGroupProvider(conf), id, null)
+      new EngineRef(
+        conf.clone,
+        Utils.currentUser,
+        true,
+        PluginLoader.loadGroupProvider(conf),
+        id,
+        null)
 
     val engineSpace = DiscoveryPaths.makePath(
       s"kyuubi_test_${KYUUBI_VERSION}_USER_SPARK_SQL",
@@ -503,7 +618,13 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     conf.set(KyuubiConf.GROUP_PROVIDER, "hadoop")
 
     val engine =
-      new EngineRef(conf.clone, Utils.currentUser, PluginLoader.loadGroupProvider(conf), id, null)
+      new EngineRef(
+        conf.clone,
+        Utils.currentUser,
+        true,
+        PluginLoader.loadGroupProvider(conf),
+        id,
+        null)
 
     val engineSpace = DiscoveryPaths.makePath(
       s"kyuubi_test_${KYUUBI_VERSION}_GROUP_SPARK_SQL",
@@ -554,7 +675,13 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
 
     val id1 = UUID.randomUUID().toString
     val engine1 =
-      new EngineRef(conf.clone, Utils.currentUser, PluginLoader.loadGroupProvider(conf), id1, null)
+      new EngineRef(
+        conf.clone,
+        Utils.currentUser,
+        true,
+        PluginLoader.loadGroupProvider(conf),
+        id1,
+        null)
     val engineSpace1 = DiscoveryPaths.makePath(
       s"kyuubi_test_${KYUUBI_VERSION}_CONNECTION_SPARK_SQL",
       Utils.currentUser,
@@ -562,7 +689,13 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
 
     val id2 = UUID.randomUUID().toString
     val engine2 =
-      new EngineRef(conf.clone, Utils.currentUser, PluginLoader.loadGroupProvider(conf), id2, null)
+      new EngineRef(
+        conf.clone,
+        Utils.currentUser,
+        true,
+        PluginLoader.loadGroupProvider(conf),
+        id2,
+        null)
     val engineSpace2 = DiscoveryPaths.makePath(
       s"kyuubi_test_${KYUUBI_VERSION}_CONNECTION_SPARK_SQL",
       Utils.currentUser,
@@ -619,9 +752,15 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
     conf.set(KyuubiConf.GROUP_PROVIDER, "hadoop")
 
     // In EngineRef, when use hive.server2.proxy.user or kyuubi.session.proxy.user
-    // the user is the proxyUser, and in our test it is normalUser
+    // the sessionUser is the proxyUser, and in our test it is normalUser
     val engine =
-      new EngineRef(conf.clone, user = normalUser, PluginLoader.loadGroupProvider(conf), id, null)
+      new EngineRef(
+        conf.clone,
+        sessionUser = normalUser,
+        true,
+        PluginLoader.loadGroupProvider(conf),
+        id,
+        null)
 
     // so as the firstChild in engineSpace we use normalUser
     val engineSpace = DiscoveryPaths.makePath(
@@ -654,19 +793,19 @@ class AdminResourceSuite extends KyuubiFunSuite with RestFrontendTestHelper {
 
       // use proxyUser
       val listEngineResponse1 = runListEngine(Option(normalUser), None)
-      assert(listEngineResponse1.getStatus === 405)
+      assert(listEngineResponse1.getStatus === 403)
       val errorMessage = s"Failed to validate proxy privilege of anonymous for $normalUser"
       assert(listEngineResponse1.readEntity(classOf[String]).contains(errorMessage))
 
       // it should be the same behavior as hive.server2.proxy.user
       val listEngineResponse2 = runListEngine(None, Option(normalUser))
-      assert(listEngineResponse2.getStatus === 405)
+      assert(listEngineResponse2.getStatus === 403)
       assert(listEngineResponse2.readEntity(classOf[String]).contains(errorMessage))
 
       // when both set, proxyUser takes precedence
       val listEngineResponse3 =
         runListEngine(Option(normalUser), Option(s"${normalUser}HiveServer2"))
-      assert(listEngineResponse3.getStatus === 405)
+      assert(listEngineResponse3.getStatus === 403)
       assert(listEngineResponse3.readEntity(classOf[String]).contains(errorMessage))
     }
   }

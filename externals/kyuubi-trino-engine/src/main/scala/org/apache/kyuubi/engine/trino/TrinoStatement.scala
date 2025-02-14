@@ -17,7 +17,8 @@
 
 package org.apache.kyuubi.engine.trino
 
-import java.util.concurrent.Executors
+import java.util.OptionalDouble
+import java.util.concurrent.{Executors, TimeUnit}
 
 import scala.annotation.tailrec
 import scala.collection.JavaConverters._
@@ -37,6 +38,7 @@ import org.apache.kyuubi.config.KyuubiConf.ENGINE_TRINO_SHOW_PROGRESS
 import org.apache.kyuubi.config.KyuubiConf.ENGINE_TRINO_SHOW_PROGRESS_DEBUG
 import org.apache.kyuubi.engine.trino.TrinoConf.DATA_PROCESSING_POOL_SIZE
 import org.apache.kyuubi.operation.log.OperationLog
+import org.apache.kyuubi.util.ThreadUtils
 
 /**
  * Trino client communicate with trino cluster.
@@ -56,6 +58,10 @@ class TrinoStatement(
   private lazy val dataProcessingPoolSize = kyuubiConf.get(DATA_PROCESSING_POOL_SIZE)
   private lazy val showProcess = kyuubiConf.get(ENGINE_TRINO_SHOW_PROGRESS)
   private lazy val showDebug = kyuubiConf.get(ENGINE_TRINO_SHOW_PROGRESS_DEBUG)
+
+  private val timer =
+    ThreadUtils.newDaemonSingleThreadScheduledExecutor("Trino-Status-Printer", false)
+  private var lastStats: OptionalDouble = OptionalDouble.empty()
 
   implicit val ec: ExecutionContext =
     ExecutionContext.fromExecutor(Executors.newFixedThreadPool(dataProcessingPoolSize))
@@ -102,9 +108,10 @@ class TrinoStatement(
             getData()
           }
         } else {
+          timer.shutdown()
           Verify.verify(trino.isFinished)
           if (operationLog.isDefined && showProcess) {
-            TrinoStatusPrinter.printFinalInfo(trino, operationLog.get, showDebug)
+            TrinoStatusPrinter.printStatusInfo(trino, operationLog.get, showDebug)
           }
           val finalStatus = trino.finalStatusInfo()
           if (finalStatus.getError() != null) {
@@ -146,6 +153,24 @@ class TrinoStatement(
     }
 
     trinoContext.clientSession.set(builder.build())
+  }
+  def printStatusInfo(): Unit = {
+    if (operationLog.isDefined && showProcess) {
+      timer.scheduleWithFixedDelay(
+        () => {
+          if (trino.isRunning) {
+            lastStats =
+              TrinoStatusPrinter.printStatusInfo(trino, operationLog.get, showDebug, lastStats)
+          }
+        },
+        500L,
+        kyuubiConf.get(KyuubiConf.ENGINE_TRINO_SHOW_PROGRESS_UPDATE_INTERVAL),
+        TimeUnit.MILLISECONDS)
+    }
+  }
+
+  def stopPrinter(): Unit = {
+    timer.shutdown()
   }
 }
 

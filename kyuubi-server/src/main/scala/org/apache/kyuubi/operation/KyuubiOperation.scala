@@ -95,6 +95,7 @@ abstract class KyuubiOperation(session: Session) extends AbstractOperation(sessi
           }
           setOperationException(ke)
           setState(OperationState.ERROR)
+          shutdownTimeoutMonitor()
           throw ke
         }
       }
@@ -118,11 +119,10 @@ abstract class KyuubiOperation(session: Session) extends AbstractOperation(sessi
   }
 
   protected def sendCredentialsIfNeeded(): Unit = {
-    val appUser = session.asInstanceOf[KyuubiSessionImpl].engine.appUser
     val sessionManager = session.sessionManager.asInstanceOf[KyuubiSessionManager]
     sessionManager.credentialsManager.sendCredentialsIfNeeded(
       session.handle.identifier.toString,
-      appUser,
+      session.asInstanceOf[KyuubiSessionImpl].engine.appUser,
       client.sendCredentials)
   }
 
@@ -207,7 +207,7 @@ abstract class KyuubiOperation(session: Session) extends AbstractOperation(sessi
 
   protected def eventEnabled: Boolean = false
 
-  if (eventEnabled) EventBus.post(KyuubiOperationEvent(this))
+  if (eventEnabled) EventBus.post(getOperationEvent)
 
   override def setState(newState: OperationState): Unit = {
     MetricsSystem.tracing { ms =>
@@ -218,6 +218,26 @@ abstract class KyuubiOperation(session: Session) extends AbstractOperation(sessi
       ms.markMeter(MetricRegistry.name(OPERATION_STATE, newState.toString.toLowerCase))
     }
     super.setState(newState)
-    if (eventEnabled) EventBus.post(KyuubiOperationEvent(this))
+    if (eventEnabled) EventBus.post(getOperationEvent)
+  }
+
+  def getOperationEvent: KyuubiOperationEvent = {
+    val kyuubiSession = session.asInstanceOf[KyuubiSession]
+    KyuubiOperationEvent(
+      statementId,
+      Option(remoteOpHandle()).map(OperationHandle(_).identifier.toString).orNull,
+      statement,
+      shouldRunAsync,
+      state.name(),
+      lastAccessTime,
+      createTime,
+      startTime,
+      completedTime,
+      Option(operationException),
+      kyuubiSession.handle.identifier.toString,
+      kyuubiSession.user,
+      kyuubiSession.sessionType.toString,
+      kyuubiSession.connectionUrl,
+      metrics)
   }
 }

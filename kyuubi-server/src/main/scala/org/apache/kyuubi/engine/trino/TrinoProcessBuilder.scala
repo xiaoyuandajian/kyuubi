@@ -23,6 +23,7 @@ import java.nio.file.Paths
 import scala.collection.mutable
 
 import com.google.common.annotations.VisibleForTesting
+import org.apache.commons.lang3.StringUtils
 
 import org.apache.kyuubi.{Logging, SCALA_COMPILE_VERSION, Utils}
 import org.apache.kyuubi.config.KyuubiConf
@@ -34,14 +35,15 @@ import org.apache.kyuubi.util.command.CommandLineUtils._
 
 class TrinoProcessBuilder(
     override val proxyUser: String,
+    override val doAsEnabled: Boolean,
     override val conf: KyuubiConf,
     val engineRefId: String,
     val extraEngineLog: Option[OperationLog] = None)
   extends ProcBuilder with Logging {
 
   @VisibleForTesting
-  def this(proxyUser: String, conf: KyuubiConf) {
-    this(proxyUser, conf, "")
+  def this(proxyUser: String, doAsEnabled: Boolean, conf: KyuubiConf) {
+    this(proxyUser, doAsEnabled, conf, "")
   }
 
   override protected def module: String = "kyuubi-trino-engine"
@@ -61,9 +63,9 @@ class TrinoProcessBuilder(
 
     val memory = conf.get(ENGINE_TRINO_MEMORY)
     buffer += s"-Xmx$memory"
-    val javaOptions = conf.get(ENGINE_TRINO_JAVA_OPTIONS)
+    val javaOptions = conf.get(ENGINE_TRINO_JAVA_OPTIONS).filter(StringUtils.isNotBlank(_))
     if (javaOptions.isDefined) {
-      buffer += javaOptions.get
+      buffer ++= parseOptionString(javaOptions.get)
     }
 
     val classpathEntries = new mutable.LinkedHashSet[String]

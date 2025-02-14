@@ -187,6 +187,61 @@ class PySparkTests extends WithKyuubiServer with HiveJDBCTestHelper {
     }
   }
 
+  test("catch all exception when dump the result to json") {
+    checkPythonRuntimeAndVersion()
+    withSessionConf()(Map(KyuubiConf.ENGINE_SPARK_PYTHON_MAGIC_ENABLED.key -> "true"))() {
+      withMultipleConnectionJdbcStatement()({ stmt =>
+        val statement = stmt.asInstanceOf[KyuubiStatement]
+        statement.executePython("l = [('Alice', 1)]")
+        statement.executePython("df = spark.createDataFrame(l)")
+        val errorMsg = intercept[KyuubiSQLException] {
+          statement.executePython("%json df")
+        }.getMessage
+        assert(errorMsg.contains("Object of type DataFrame is not JSON serializable"))
+
+        statement.executePython("df = spark.createDataFrame(l).collect()")
+        val result = statement.executePython("%json df")
+        assert(result.next())
+        assert(result.getString("output") == "{\"application/json\":[[\"Alice\",1]]}")
+      })
+    }
+  }
+
+  test("Support to cancel Spark python operation") {
+    checkPythonRuntimeAndVersion()
+    withMultipleConnectionJdbcStatement()({ stmt =>
+      val statement = stmt.asInstanceOf[KyuubiStatement]
+      statement.executeQuery("SET kyuubi.operation.language=PYTHON")
+      val code1 =
+        """
+          |i = 0
+          |i
+          |""".stripMargin
+      val resultSet1 = statement.executeQuery(code1)
+      assert(resultSet1.next())
+      assert(resultSet1.getString("status") === "ok")
+      assert(resultSet1.getString("output") === "0")
+      val code2 =
+        """
+          |import time
+          |while True:
+          |   i +=1
+          |   time.sleep(1)
+          |""".stripMargin
+      statement.executeAsync(code2)
+      statement.cancel()
+
+      val code3 =
+        """
+          |i
+          |""".stripMargin
+      val resultSet3 = statement.executeQuery(code3)
+      assert(resultSet3.next())
+      assert(resultSet3.getString("status") === "ok")
+      assert(resultSet3.getString("output").toInt > 0)
+    })
+  }
+
   private def runPySparkTest(
       pyCode: String,
       output: String): Unit = {

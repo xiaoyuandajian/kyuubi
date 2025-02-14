@@ -34,6 +34,7 @@ import org.apache.kyuubi.engine.spark.SparkProcessBuilder
 import org.apache.kyuubi.kubernetes.test.MiniKube
 import org.apache.kyuubi.operation.SparkQueryTests
 import org.apache.kyuubi.session.KyuubiSessionManager
+import org.apache.kyuubi.util.JavaUtils
 import org.apache.kyuubi.util.Validator.KUBERNETES_EXECUTOR_POD_NAME_PREFIX
 import org.apache.kyuubi.zookeeper.ZookeeperConf.ZK_CLIENT_PORT_ADDRESS
 
@@ -50,7 +51,7 @@ abstract class SparkOnKubernetesSuiteBase
     // TODO Support more Spark version
     // Spark official docker image: https://hub.docker.com/r/apache/spark/tags
     KyuubiConf().set("spark.master", s"k8s://$apiServerAddress")
-      .set("spark.kubernetes.container.image", "apache/spark:3.4.2")
+      .set("spark.kubernetes.container.image", "apache/spark:3.5.4")
       .set("spark.kubernetes.container.image.pullPolicy", "IfNotPresent")
       .set("spark.executor.instances", "1")
       .set("spark.executor.memory", "512M")
@@ -96,7 +97,7 @@ class SparkClientModeOnKubernetesSuite extends SparkClientModeOnKubernetesSuiteB
  */
 class SparkClusterModeOnKubernetesSuiteBase
   extends SparkOnKubernetesSuiteBase with WithSimpleDFSService {
-  private val localhostAddress = Utils.findLocalInetAddress.getHostAddress
+  private val localhostAddress = JavaUtils.findLocalInetAddress.getHostAddress
   private val driverTemplate =
     Thread.currentThread().getContextClassLoader.getResource("driver.yml")
 
@@ -106,6 +107,11 @@ class SparkClusterModeOnKubernetesSuiteBase
     hdfsConf.set("dfs.namenode.servicerpc-bind-host", "0.0.0.0")
     hdfsConf.set("dfs.datanode.hostname", localhostAddress)
     hdfsConf.set("dfs.datanode.address", s"0.0.0.0:${NetUtils.getFreeSocketPort}")
+    // before HADOOP-18206 (3.4.0), HDFS MetricsLogger strongly depends on
+    // commons-logging, we should disable it explicitly, otherwise, it throws
+    // ClassNotFound: org.apache.commons.logging.impl.Log4JLogger
+    hdfsConf.set("dfs.namenode.metrics.logger.period.seconds", "0")
+    hdfsConf.set("dfs.datanode.metrics.logger.period.seconds", "0")
     // spark use 185 as userid in docker
     hdfsConf.set("hadoop.proxyuser.185.groups", "*")
     hdfsConf.set("hadoop.proxyuser.185.hosts", "*")
@@ -192,8 +198,8 @@ class KyuubiOperationKubernetesClusterClusterModeSuite
   test("Check if spark.kubernetes.executor.podNamePrefix is invalid") {
     Seq("_123", "spark_exec", "spark@", "a" * 238).foreach { invalid =>
       conf.set(KUBERNETES_EXECUTOR_POD_NAME_PREFIX, invalid)
-      val builder = new SparkProcessBuilder("test", conf)
-      val e = intercept[KyuubiException](builder.validateConf)
+      val builder = new SparkProcessBuilder("test", true, conf)
+      val e = intercept[KyuubiException](builder.validateConf())
       assert(e.getMessage === s"'$invalid' in spark.kubernetes.executor.podNamePrefix is" +
         s" invalid. must conform https://kubernetes.io/docs/concepts/overview/" +
         "working-with-objects/names/#dns-subdomain-names and the value length <= 237")

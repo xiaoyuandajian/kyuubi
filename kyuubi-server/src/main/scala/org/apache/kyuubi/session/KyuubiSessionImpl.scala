@@ -49,6 +49,7 @@ class KyuubiSessionImpl(
     conf: Map[String, String],
     sessionManager: KyuubiSessionManager,
     sessionConf: KyuubiConf,
+    doAsEnabled: Boolean,
     parser: KyuubiParser)
   extends KyuubiSession(protocol, user, password, ipAddress, conf, sessionManager) {
 
@@ -77,6 +78,7 @@ class KyuubiSessionImpl(
   lazy val engine: EngineRef = new EngineRef(
     sessionConf,
     user,
+    doAsEnabled,
     sessionManager.groupProvider,
     handle.identifier.toString,
     sessionManager.applicationManager,
@@ -116,8 +118,9 @@ class KyuubiSessionImpl(
     // we should call super.open before running launch engine operation
     super.open()
 
+    sessionManager.tempFileService.addPathToExpiration(operationalLogRootDir.get)
+
     runOperation(launchEngineOp)
-    engineLastAlive = System.currentTimeMillis()
   }
 
   def getEngineNode: Option[ServiceNodeInfo] = {
@@ -220,6 +223,8 @@ class KyuubiSessionImpl(
         sessionEvent.openedTime = System.currentTimeMillis()
         sessionEvent.remoteSessionId = _engineSessionHandle.identifier.toString
         _client.engineId.foreach(e => sessionEvent.engineId = e)
+        _client.engineName.foreach(e => sessionEvent.engineName = e)
+        _client.engineUrl.foreach(e => sessionEvent.engineUrl = e)
         EventBus.post(sessionEvent)
       }
     }
@@ -313,41 +318,9 @@ class KyuubiSessionImpl(
     }
   }
 
-  @volatile private var engineLastAlive: Long = _
-  private val engineAliveTimeout = sessionConf.get(KyuubiConf.ENGINE_ALIVE_TIMEOUT)
-  private val aliveProbeEnabled = sessionConf.get(KyuubiConf.ENGINE_ALIVE_PROBE_ENABLED)
-  private val engineAliveMaxFailCount = sessionConf.get(KyuubiConf.ENGINE_ALIVE_MAX_FAILURES)
-  @volatile private var engineAliveFailCount = 0
-
   def checkEngineConnectionAlive(): Boolean = {
-    try {
-      if (Option(client).exists(_.engineConnectionClosed)) return false
-      if (!aliveProbeEnabled) return true
-      getInfo(TGetInfoType.CLI_DBMS_VER)
-      engineLastAlive = System.currentTimeMillis()
-      engineAliveFailCount = 0
-      true
-    } catch {
-      case e: Throwable =>
-        val now = System.currentTimeMillis()
-        engineAliveFailCount = engineAliveFailCount + 1
-        if (now - engineLastAlive > engineAliveTimeout &&
-          engineAliveFailCount >= engineAliveMaxFailCount) {
-          error(s"The engineRef[${engine.getEngineRefId()}] is marked as not alive "
-            + s"due to a lack of recent successful alive probes. "
-            + s"The time since last successful probe: "
-            + s"${now - engineLastAlive} ms exceeds the timeout of $engineAliveTimeout ms. "
-            + s"The engine has failed $engineAliveFailCount times, "
-            + s"surpassing the maximum failure count of $engineAliveMaxFailCount.")
-          false
-        } else {
-          warn(
-            s"The engineRef[${engine.getEngineRefId()}] alive probe fails, " +
-              s"${now - engineLastAlive} ms exceeds timeout $engineAliveTimeout ms, " +
-              s"and has failed $engineAliveFailCount times.",
-            e)
-          true
-        }
-    }
+    if (client == null) return true // client has not been initialized
+    if (client.engineConnectionClosed) return false
+    !client.remoteEngineBroken
   }
 }

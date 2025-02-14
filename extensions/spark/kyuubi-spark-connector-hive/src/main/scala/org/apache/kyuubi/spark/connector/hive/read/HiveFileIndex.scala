@@ -31,7 +31,7 @@ import org.apache.spark.sql.connector.catalog.CatalogPlugin
 import org.apache.spark.sql.execution.datasources._
 import org.apache.spark.sql.types.StructType
 
-import org.apache.kyuubi.spark.connector.hive.{HiveTableCatalog, KyuubiHiveConnectorException}
+import org.apache.kyuubi.spark.connector.hive.{HiveConnectorUtils, HiveTableCatalog, KyuubiHiveConnectorException}
 
 class HiveCatalogFileIndex(
     sparkSession: SparkSession,
@@ -164,7 +164,9 @@ class HiveInMemoryFileIndex(
     }
     val selectedPartitions =
       if (partitionSpec().partitionColumns.isEmpty) {
-        PartitionDirectory(InternalRow.empty, allFiles().filter(isNonEmptyFile)) :: Nil
+        HiveConnectorUtils.createPartitionDirectory(
+          InternalRow.empty,
+          allFiles().filter(isNonEmptyFile)) :: Nil
       } else {
         if (recursiveFileLookup) {
           throw new IllegalArgumentException(
@@ -181,7 +183,7 @@ class HiveInMemoryFileIndex(
                 // Directory does not exist, or has no children files
                 Nil
             }
-            val partDir = PartitionDirectory(values, files)
+            val partDir = HiveConnectorUtils.createPartitionDirectory(values, files)
             // Update Partition Directory -> binding Hive part map
             updatePartDirHivePartitionMapping(partDir, partPath)
 

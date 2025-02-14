@@ -35,10 +35,7 @@ import org.apache.spark.sql.execution.datasources.RecordReaderIterator
 import org.apache.spark.sql.execution.datasources.orc.OrcDeserializer
 import org.apache.spark.sql.types.StructType
 
-import org.apache.kyuubi.KyuubiException
-import org.apache.kyuubi.engine.spark.KyuubiSparkUtil.SPARK_ENGINE_RUNTIME_VERSION
 import org.apache.kyuubi.operation.{FetchIterator, IterableFetchIterator}
-import org.apache.kyuubi.util.reflect.DynConstructors
 
 class FetchOrcStatement(spark: SparkSession) {
 
@@ -62,66 +59,46 @@ class FetchOrcStatement(spark: SparkSession) {
     val fullSchema = orcSchema.map(f =>
       AttributeReference(f.name, f.dataType, f.nullable, f.metadata)())
     val unsafeProjection = GenerateUnsafeProjection.generate(fullSchema, fullSchema)
-    val deserializer = getOrcDeserializer(orcSchema, colId)
+    val deserializer = new OrcDeserializer(orcSchema, colId)
     orcIter = new OrcFileIterator(list)
     val iterRow = orcIter.map(value =>
       unsafeProjection(deserializer.deserialize(value)))
       .map(value => toRowConverter(value))
-    new IterableFetchIterator[Row](iterRow.toIterable)
+    new IterableFetchIterator[Row](new Iterable[Row] {
+      override def iterator: Iterator[Row] = iterRow
+    })
   }
 
   def close(): Unit = {
     orcIter.close()
   }
-
-  private def getOrcDeserializer(orcSchema: StructType, colId: Array[Int]): OrcDeserializer = {
-    try {
-      if (SPARK_ENGINE_RUNTIME_VERSION >= "3.2") {
-        // SPARK-34535 changed the constructor signature of OrcDeserializer
-        DynConstructors.builder()
-          .impl(classOf[OrcDeserializer], classOf[StructType], classOf[Array[Int]])
-          .build[OrcDeserializer]()
-          .newInstance(
-            orcSchema,
-            colId)
-      } else {
-        DynConstructors.builder()
-          .impl(
-            classOf[OrcDeserializer],
-            classOf[StructType],
-            classOf[StructType],
-            classOf[Array[Int]])
-          .build[OrcDeserializer]()
-          .newInstance(
-            new StructType,
-            orcSchema,
-            colId)
-      }
-    } catch {
-      case e: Throwable =>
-        throw new KyuubiException("Failed to create OrcDeserializer", e)
-    }
-  }
 }
 
 class OrcFileIterator(fileList: ListBuffer[LocatedFileStatus]) extends Iterator[OrcStruct] {
 
-  private val iters = fileList.map(x => getOrcFileIterator(x))
+  private var idx = 0
+  private var curIter = getNextIter
 
-  var idx = 0
+  private def getNextIter: Option[RecordReaderIterator[OrcStruct]] = {
+    if (idx >= fileList.size) return None
+    val resIter = getOrcFileIterator(fileList(idx))
+    idx = idx + 1
+    Some(resIter)
+  }
 
   override def hasNext: Boolean = {
-    val hasNext = iters(idx).hasNext
+    if (curIter.isEmpty) return false
+    val hasNext = curIter.get.hasNext
     if (!hasNext) {
-      iters(idx).close()
-      idx += 1
+      curIter.get.close()
+      curIter = getNextIter
       // skip empty file
-      while (idx < iters.size) {
-        if (iters(idx).hasNext) {
+      while (curIter.isDefined) {
+        if (curIter.get.hasNext) {
           return true
         } else {
-          iters(idx).close()
-          idx = idx + 1
+          curIter.get.close()
+          curIter = getNextIter
         }
       }
     }
@@ -129,11 +106,11 @@ class OrcFileIterator(fileList: ListBuffer[LocatedFileStatus]) extends Iterator[
   }
 
   override def next(): OrcStruct = {
-    iters(idx).next()
+    curIter.get.next()
   }
 
   def close(): Unit = {
-    iters.foreach(_.close())
+    curIter.foreach(_.close())
   }
 
   private def getOrcFileIterator(file: LocatedFileStatus): RecordReaderIterator[OrcStruct] = {

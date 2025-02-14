@@ -17,7 +17,6 @@
 package org.apache.kyuubi.plugin.spark.authz.ranger
 
 import org.apache.spark.SparkConf
-import org.scalatest.Outcome
 
 import org.apache.kyuubi.Utils
 import org.apache.kyuubi.plugin.spark.authz.AccessControlException
@@ -34,16 +33,9 @@ import org.apache.kyuubi.util.AssertionUtils.interceptEndsWith
 @HudiTest
 class HudiCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
   override protected val catalogImpl: String = "in-memory"
-  // TODO: Apache Hudi not support Spark 3.5 and Scala 2.13 yet,
-  //  should change after Apache Hudi support Spark 3.5 and Scala 2.13.
-  private def isSupportedVersion = !isSparkV35OrGreater && !isScalaV213
 
   override protected val sqlExtensions: String =
-    if (isSupportedVersion) {
-      "org.apache.spark.sql.hudi.HoodieSparkSessionExtension"
-    } else {
-      ""
-    }
+    "org.apache.spark.sql.hudi.HoodieSparkSessionExtension"
 
   override protected val extraSparkConf: SparkConf =
     new SparkConf()
@@ -55,32 +47,23 @@ class HudiCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
   val outputTable1 = "outputTable_hoodie"
   val index1 = "table_hoodie_index1"
 
-  override def withFixture(test: NoArgTest): Outcome = {
-    assume(isSupportedVersion)
-    test()
-  }
-
   override def beforeAll(): Unit = {
-    if (isSupportedVersion) {
-      if (isSparkV32OrGreater) {
-        spark.conf.set(
-          s"spark.sql.catalog.$sparkCatalog",
-          "org.apache.spark.sql.hudi.catalog.HoodieCatalog")
-        spark.conf.set(s"spark.sql.catalog.$sparkCatalog.type", "hadoop")
-        spark.conf.set(
-          s"spark.sql.catalog.$sparkCatalog.warehouse",
-          Utils.createTempDir("hudi-hadoop").toString)
-      }
-      super.beforeAll()
+    if (isSparkV32OrGreater) {
+      spark.conf.set(
+        s"spark.sql.catalog.$sparkCatalog",
+        "org.apache.spark.sql.hudi.catalog.HoodieCatalog")
+      spark.conf.set(s"spark.sql.catalog.$sparkCatalog.type", "hadoop")
+      spark.conf.set(
+        s"spark.sql.catalog.$sparkCatalog.warehouse",
+        Utils.createTempDir("hudi-hadoop").toString)
     }
+    super.beforeAll()
   }
 
   override def afterAll(): Unit = {
-    if (isSupportedVersion) {
-      super.afterAll()
-      spark.sessionState.catalog.reset()
-      spark.sessionState.conf.clear()
-    }
+    super.afterAll()
+    spark.sessionState.catalog.reset()
+    spark.sessionState.conf.clear()
   }
 
   test("AlterTableCommand") {
@@ -507,7 +490,7 @@ class HudiCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
         interceptEndsWith[AccessControlException] {
           doAs(someone, sql(mergeIntoSQL))
         }(s"does not have [select] privilege on " +
-          s"[$namespace1/$table2/id,$namespace1/$table2/name,$namespace1/$table2/city], " +
+          s"[$namespace1/$table2/city,$namespace1/$table2/id,$namespace1/$table2/name], " +
           s"[update] privilege on [$namespace1/$table1]")
         doAs(admin, sql(mergeIntoSQL))
       }
@@ -643,5 +626,29 @@ class HudiCatalogRangerSparkExtensionSuite extends RangerSparkExtensionSuite {
       }(s"does not have [select] privilege on [$namespace1/$table1]")
       doAs(admin, sql(showCommitsSql))
     }
+  }
+
+  test("ShowClusteringProcedure") {
+    val path = "hdfs://demo/test/hudi/path"
+    val showCommitsSql = s"CALL SHOW_CLUSTERING(path => '$path')"
+    interceptEndsWith[AccessControlException] {
+      doAs(someone, sql(showCommitsSql))
+    }(s"does not have [read] privilege on [[$path, $path/]]")
+  }
+
+  test("RunClusteringProcedure") {
+    val path = "hdfs://demo/test/hudi/path"
+    val showCommitsSql = s"CALL RUN_CLUSTERING(path => '$path')"
+    interceptEndsWith[AccessControlException] {
+      doAs(someone, sql(showCommitsSql))
+    }(s"does not have [write] privilege on [[$path, $path/]]")
+  }
+
+  test("RunCompactionProcedure") {
+    val path = "hdfs://demo/test/hudi/path"
+    val showCommitsSql = s"CALL RUN_COMPACTION(path => '$path')"
+    interceptEndsWith[AccessControlException] {
+      doAs(someone, sql(showCommitsSql))
+    }(s"does not have [write] privilege on [[$path, $path/]]")
   }
 }

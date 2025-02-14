@@ -41,7 +41,7 @@ abstract class SchemaHelper {
     tColumnDesc
   }
 
-  private def toTTypeDesc(sqlType: Int, precision: Int, scale: Int): TTypeDesc = {
+  protected def toTTypeDesc(sqlType: Int, precision: Int, scale: Int): TTypeDesc = {
     val typeEntry = new TPrimitiveTypeEntry(toTTypeId(sqlType))
     typeEntry.setTypeQualifiers(toTTypeQualifiers(sqlType, precision, scale))
     val tTypeDesc = new TTypeDesc()
@@ -100,12 +100,22 @@ abstract class SchemaHelper {
     case Types.DECIMAL =>
       decimalToTTypeId
 
+    case Types.FLOAT =>
+      floatToTTypeId
+
+    case Types.BOOLEAN =>
+      booleanToTTypeId
+
     // TODO add more type support
     case _ =>
       defaultToTTypeId
   }
 
   protected def bitToTTypeId: TTypeId = {
+    TTypeId.BOOLEAN_TYPE
+  }
+
+  protected def booleanToTTypeId: TTypeId = {
     TTypeId.BOOLEAN_TYPE
   }
 
@@ -126,6 +136,10 @@ abstract class SchemaHelper {
   }
 
   protected def realToTTypeId: TTypeId = {
+    TTypeId.FLOAT_TYPE
+  }
+
+  protected def floatToTTypeId: TTypeId = {
     TTypeId.FLOAT_TYPE
   }
 

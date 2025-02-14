@@ -25,12 +25,11 @@ import scala.collection.JavaConverters._
 import org.apache.hadoop.fs.Path
 import org.apache.spark.sql.DataFrame
 import org.apache.spark.sql.kyuubi.SparkDatasetHelper._
-import org.apache.spark.sql.types._
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
-import org.apache.kyuubi.config.KyuubiConf.{OPERATION_RESULT_MAX_ROWS, OPERATION_RESULT_SAVE_TO_FILE, OPERATION_RESULT_SAVE_TO_FILE_DIR, OPERATION_RESULT_SAVE_TO_FILE_MINSIZE}
+import org.apache.kyuubi.config.KyuubiConf.{ENGINE_SPARK_OPERATION_INCREMENTAL_COLLECT_CANCEL_JOB_GROUP, OPERATION_RESULT_MAX_ROWS, OPERATION_RESULT_SAVE_TO_FILE, OPERATION_RESULT_SAVE_TO_FILE_MIN_ROWS, OPERATION_RESULT_SAVE_TO_FILE_MINSIZE}
 import org.apache.kyuubi.engine.spark.KyuubiSparkUtil._
-import org.apache.kyuubi.engine.spark.session.SparkSessionImpl
+import org.apache.kyuubi.engine.spark.session.{SparkSessionImpl, SparkSQLSessionManager}
 import org.apache.kyuubi.operation.{ArrayFetchIterator, FetchIterator, IterableFetchIterator, OperationHandle, OperationState}
 import org.apache.kyuubi.operation.log.OperationLog
 import org.apache.kyuubi.session.Session
@@ -49,14 +48,7 @@ class ExecuteStatement(
   override protected def supportProgress: Boolean = true
 
   private var fetchOrcStatement: Option[FetchOrcStatement] = None
-  private var saveFileName: Option[String] = None
-  override protected def resultSchema: StructType = {
-    if (result == null || result.schema.isEmpty) {
-      new StructType().add("Result", "string")
-    } else {
-      result.schema
-    }
-  }
+  private var saveFilePath: Option[Path] = None
 
   override protected def beforeRun(): Unit = {
     OperationLog.setCurrentOperationLog(operationLog)
@@ -71,9 +63,8 @@ class ExecuteStatement(
   override def close(): Unit = {
     super.close()
     fetchOrcStatement.foreach(_.close())
-    saveFileName.foreach { p =>
-      val path = new Path(p)
-      path.getFileSystem(spark.sparkContext.hadoopConfiguration).delete(path, true)
+    saveFilePath.foreach { p =>
+      p.getFileSystem(spark.sparkContext.hadoopConfiguration).delete(p, true)
     }
   }
 
@@ -105,6 +96,12 @@ class ExecuteStatement(
       onError(cancel = true)
     } finally {
       shutdownTimeoutMonitor()
+      if (!spark.sparkContext.isStopped) {
+        if (!incrementalCollect ||
+          getSessionConf(ENGINE_SPARK_OPERATION_INCREMENTAL_COLLECT_CANCEL_JOB_GROUP, spark)) {
+          spark.sparkContext.cancelJobGroup(statementId)
+        }
+      }
     }
 
   override protected def runInternal(): Unit = {
@@ -127,6 +124,7 @@ class ExecuteStatement(
           val ke =
             KyuubiSQLException("Error submitting query in background, query rejected", rejected)
           setOperationException(ke)
+          shutdownTimeoutMonitor()
           throw ke
       }
     } else {
@@ -172,29 +170,32 @@ class ExecuteStatement(
       })
     } else {
       val resultSaveEnabled = getSessionConf(OPERATION_RESULT_SAVE_TO_FILE, spark)
-      lazy val resultSaveThreshold = getSessionConf(OPERATION_RESULT_SAVE_TO_FILE_MINSIZE, spark)
+      val resultSaveSizeThreshold = getSessionConf(OPERATION_RESULT_SAVE_TO_FILE_MINSIZE, spark)
+      val resultSaveRowsThreshold = getSessionConf(OPERATION_RESULT_SAVE_TO_FILE_MIN_ROWS, spark)
       if (hasResultSet && resultSaveEnabled && shouldSaveResultToFs(
           resultMaxRows,
-          resultSaveThreshold,
+          resultSaveSizeThreshold,
+          resultSaveRowsThreshold,
           result)) {
-        val sessionId = session.handle.identifier.toString
-        val savePath = session.sessionManager.getConf.get(OPERATION_RESULT_SAVE_TO_FILE_DIR)
-        saveFileName = Some(s"$savePath/$engineId/$sessionId/$statementId")
+        saveFilePath =
+          Some(
+            session.sessionManager.asInstanceOf[SparkSQLSessionManager].getOperationResultSavePath(
+              session.handle,
+              handle))
         // Rename all col name to avoid duplicate columns
         val colName = range(0, result.schema.size).map(x => "col" + x)
 
-        val codec = if (SPARK_ENGINE_RUNTIME_VERSION >= "3.2") "zstd" else "zlib"
         // df.write will introduce an extra shuffle for the outermost limit, and hurt performance
         if (resultMaxRows > 0) {
           result.toDF(colName: _*).limit(resultMaxRows).write
-            .option("compression", codec).format("orc").save(saveFileName.get)
+            .option("compression", "zstd").format("orc").save(saveFilePath.get.toString)
         } else {
           result.toDF(colName: _*).write
-            .option("compression", codec).format("orc").save(saveFileName.get)
+            .option("compression", "zstd").format("orc").save(saveFilePath.get.toString)
         }
-        info(s"Save result to $saveFileName")
+        info(s"Save result to ${saveFilePath.get}")
         fetchOrcStatement = Some(new FetchOrcStatement(spark))
-        return fetchOrcStatement.get.getIterator(saveFileName.get, resultSchema)
+        return fetchOrcStatement.get.getIterator(saveFilePath.get.toString, resultSchema)
       }
       val internalArray = if (resultMaxRows <= 0) {
         info("Execute in full collect mode")

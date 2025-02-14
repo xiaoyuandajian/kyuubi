@@ -22,7 +22,6 @@ import scala.collection.JavaConverters._
 import org.apache.kyuubi.{Logging, Utils}
 import org.apache.kyuubi.client.api.v1.dto
 import org.apache.kyuubi.client.api.v1.dto.{OperationData, OperationProgress, ServerData, SessionData}
-import org.apache.kyuubi.events.KyuubiOperationEvent
 import org.apache.kyuubi.ha.client.ServiceNodeInfo
 import org.apache.kyuubi.operation.KyuubiOperation
 import org.apache.kyuubi.session.KyuubiSession
@@ -41,6 +40,8 @@ object ApiUtils extends Logging {
         .conf(event.conf.asJava)
         .remoteSessionId(event.remoteSessionId)
         .engineId(event.engineId)
+        .engineName(event.engineName)
+        .engineUrl(event.engineUrl)
         .eventTime(event.eventTime)
         .openedTime(event.openedTime)
         .startTime(event.startTime)
@@ -64,7 +65,11 @@ object ApiUtils extends Logging {
       sessionEvent.flatMap(_.exception).map(Utils.prettyPrint).getOrElse(""),
       session.sessionType.toString,
       session.connectionUrl,
-      sessionEvent.map(_.engineId).getOrElse(""))
+      sessionEvent.map(_.engineId).getOrElse(""),
+      sessionEvent.map(_.engineName).getOrElse(""),
+      sessionEvent.map(_.engineUrl).getOrElse(""),
+      session.name.getOrElse(""),
+      sessionEvent.map(_.totalOperations).getOrElse(0): Int)
   }
 
   private def operationProgress(operation: KyuubiOperation): OperationProgress = {
@@ -80,7 +85,7 @@ object ApiUtils extends Logging {
   }
 
   def operationEvent(operation: KyuubiOperation): dto.KyuubiOperationEvent = {
-    val opEvent = KyuubiOperationEvent(operation)
+    val opEvent = operation.getOperationEvent
     dto.KyuubiOperationEvent.builder()
       .statementId(opEvent.statementId)
       .remoteId(opEvent.remoteId)
@@ -102,7 +107,7 @@ object ApiUtils extends Logging {
   }
 
   def operationData(operation: KyuubiOperation): OperationData = {
-    val opEvent = KyuubiOperationEvent(operation)
+    val opEvent = operation.getOperationEvent
     new OperationData(
       opEvent.statementId,
       opEvent.remoteId,

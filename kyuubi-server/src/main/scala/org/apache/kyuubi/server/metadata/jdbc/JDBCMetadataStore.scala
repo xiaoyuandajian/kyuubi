@@ -55,16 +55,16 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
     }
   private val driverClass = dbType match {
     case SQLITE => driverClassOpt.getOrElse("org.sqlite.JDBC")
-    case DERBY => driverClassOpt.getOrElse("org.apache.derby.jdbc.AutoloadedDriver")
     case MYSQL => driverClassOpt.getOrElse(mysqlDriverClass)
+    case POSTGRESQL => driverClassOpt.getOrElse("org.postgresql.Driver")
     case CUSTOM => driverClassOpt.getOrElse(
         throw new IllegalArgumentException("No jdbc driver defined"))
   }
 
   private val dialect = dbType match {
-    case DERBY => new DerbyDatabaseDialect
     case SQLITE => new SQLiteDatabaseDialect
     case MYSQL => new MySQLDatabaseDialect
+    case POSTGRESQL => new PostgreSQLDatabaseDialect
     case CUSTOM => new GenericDatabaseDialect
   }
 
@@ -80,7 +80,8 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
   hikariConfig.setPoolName("jdbc-metadata-store-pool")
 
   @VisibleForTesting
-  implicit private[kyuubi] val hikariDataSource = new HikariDataSource(hikariConfig)
+  implicit private[kyuubi] val hikariDataSource: HikariDataSource =
+    new HikariDataSource(hikariConfig)
   private val mapper = new ObjectMapper().registerModule(DefaultScalaModule)
 
   private val terminalStates = OperationState.terminalStates.map(x => s"'$x'").mkString(", ")
@@ -252,14 +253,19 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
     }
   }
 
-  override def getMetadataList(filter: MetadataFilter, from: Int, size: Int): Seq[Metadata] = {
+  override def getMetadataList(
+      filter: MetadataFilter,
+      from: Int,
+      size: Int,
+      orderBy: Option[String] = Some("key_id"),
+      direction: String = "ASC"): Seq[Metadata] = {
     val queryBuilder = new StringBuilder
     val params = ListBuffer[Any]()
     queryBuilder.append("SELECT ")
     queryBuilder.append(METADATA_COLUMNS)
     queryBuilder.append(s" FROM $METADATA_TABLE")
     queryBuilder.append(s" ${assembleWhereClause(filter, params)}")
-    queryBuilder.append(" ORDER BY key_id ")
+    orderBy.foreach(o => queryBuilder.append(s" ORDER BY $o $direction "))
     queryBuilder.append(dialect.limitClause(size, from))
     val query = queryBuilder.toString
     JdbcUtils.withConnection { connection =>
@@ -432,6 +438,7 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
         val createTime = resultSet.getLong("create_time")
         val engineType = resultSet.getString("engine_type")
         val clusterManager = Option(resultSet.getString("cluster_manager"))
+        val engineOpenTime = resultSet.getLong("engine_open_time")
         val engineId = resultSet.getString("engine_id")
         val engineName = resultSet.getString("engine_name")
         val engineUrl = resultSet.getString("engine_url")
@@ -456,6 +463,7 @@ class JDBCMetadataStore(conf: KyuubiConf) extends MetadataStore with Logging {
           createTime = createTime,
           engineType = engineType,
           clusterManager = clusterManager,
+          engineOpenTime = engineOpenTime,
           engineId = engineId,
           engineName = engineName,
           engineUrl = engineUrl,
@@ -594,6 +602,7 @@ object JDBCMetadataStore {
     "create_time",
     "engine_type",
     "cluster_manager",
+    "engine_open_time",
     "engine_id",
     "engine_name",
     "engine_url",

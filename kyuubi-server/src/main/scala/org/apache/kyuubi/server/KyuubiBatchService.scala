@@ -23,18 +23,14 @@ import org.apache.kyuubi.config.KyuubiConf.BATCH_SUBMITTER_THREADS
 import org.apache.kyuubi.engine.ApplicationState
 import org.apache.kyuubi.operation.OperationState
 import org.apache.kyuubi.server.metadata.MetadataManager
-import org.apache.kyuubi.service.{AbstractService, Serverable}
+import org.apache.kyuubi.service.AbstractService
 import org.apache.kyuubi.session.KyuubiSessionManager
 import org.apache.kyuubi.util.ThreadUtils
 
 class KyuubiBatchService(
-    server: Serverable,
+    restFrontend: KyuubiRestFrontendService,
     sessionManager: KyuubiSessionManager)
   extends AbstractService(classOf[KyuubiBatchService].getSimpleName) {
-
-  private lazy val restFrontend = server.frontendServices
-    .filter(_.isInstanceOf[KyuubiRestFrontendService])
-    .head
 
   private def kyuubiInstance: String = restFrontend.connectionUrl
 
@@ -66,6 +62,7 @@ class KyuubiBatchService(
   override def start(): Unit = {
     assert(running.compareAndSet(false, true))
     val submitTask: Runnable = () => {
+      restFrontend.waitForServerStarted()
       while (running.get) {
         metadataManager.pickBatchForSubmitting(kyuubiInstance) match {
           case None => Thread.sleep(1000)
@@ -94,8 +91,13 @@ class KyuubiBatchService(
                   metadata.appState match {
                     // app that is not submitted to resource manager
                     case None | Some(ApplicationState.NOT_FOUND) => false
-                    // app that is pending in resource manager
-                    case Some(ApplicationState.PENDING) => false
+                    // app that is pending in resource manager while the local startup
+                    // process is alive. For example, in Spark YARN cluster mode, if set
+                    // spark.yarn.submit.waitAppCompletion=false, the local spark-submit
+                    // process exits immediately once Application goes ACCEPTED status,
+                    // even no resource could be allocated for the AM container.
+                    case Some(ApplicationState.PENDING) if batchSession.startupProcessAlive =>
+                      false
                     // not sure, added for safe
                     case Some(ApplicationState.UNKNOWN) => false
                     case _ => true

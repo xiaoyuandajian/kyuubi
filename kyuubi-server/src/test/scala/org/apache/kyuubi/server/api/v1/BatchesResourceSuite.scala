@@ -42,7 +42,7 @@ import org.apache.kyuubi.engine.spark.SparkBatchProcessBuilder
 import org.apache.kyuubi.metrics.{MetricsConstants, MetricsSystem}
 import org.apache.kyuubi.operation.{BatchJobSubmission, OperationState}
 import org.apache.kyuubi.operation.OperationState.OperationState
-import org.apache.kyuubi.server.{KyuubiBatchService, KyuubiRestFrontendService}
+import org.apache.kyuubi.server.KyuubiRestFrontendService
 import org.apache.kyuubi.server.http.util.HttpAuthUtils.{basicAuthorizationHeader, AUTHORIZATION_HEADER}
 import org.apache.kyuubi.server.metadata.api.{Metadata, MetadataFilter}
 import org.apache.kyuubi.service.authentication.{AnonymousAuthenticationProviderImpl, AuthUtils}
@@ -64,7 +64,7 @@ class BatchesV2ResourceSuite extends BatchesResourceSuiteBase {
 
   override def afterEach(): Unit = {
     val sessionManager = fe.be.sessionManager.asInstanceOf[KyuubiSessionManager]
-    val batchService = server.getServices.collectFirst { case b: KyuubiBatchService => b }.get
+    val batchService = fe.asInstanceOf[KyuubiRestFrontendService].batchService.get
     sessionManager.getBatchesFromMetadataStore(MetadataFilter(), 0, Int.MaxValue)
       .foreach { batch => batchService.cancelUnscheduledBatch(batch.getId) }
     super.afterEach()
@@ -136,7 +136,7 @@ abstract class BatchesResourceSuiteBase extends KyuubiFunSuite
       .request(MediaType.APPLICATION_JSON_TYPE)
       .header(AUTHORIZATION_HEADER, basicAuthorizationHeader("anonymous"))
       .post(Entity.entity(proxyUserRequest, MediaType.APPLICATION_JSON_TYPE))
-    assert(proxyUserResponse.getStatus === 405)
+    assert(proxyUserResponse.getStatus === 403)
     var errorMessage = "Failed to validate proxy privilege of anonymous for root"
     assert(proxyUserResponse.readEntity(classOf[String]).contains(errorMessage))
 
@@ -202,8 +202,8 @@ abstract class BatchesResourceSuiteBase extends KyuubiFunSuite
 
       // check both kyuubi log and engine log
       assert(
-        logs.exists(_.contains("/bin/spark-submit")) &&
-          logs.exists(_.contains(s"SparkContext: Submitted application: $sparkBatchTestAppName")))
+        logs.exists(_.contains("bin/spark-submit")) &&
+          logs.exists(_.contains(s"Submitted application: $sparkBatchTestAppName")))
     }
 
     // invalid user name
@@ -211,7 +211,7 @@ abstract class BatchesResourceSuiteBase extends KyuubiFunSuite
       .request(MediaType.APPLICATION_JSON_TYPE)
       .header(AUTHORIZATION_HEADER, basicAuthorizationHeader(batch.getId))
       .delete()
-    assert(deleteBatchResponse.getStatus === 405)
+    assert(deleteBatchResponse.getStatus === 403)
     errorMessage = s"Failed to validate proxy privilege of ${batch.getId} for anonymous"
     assert(deleteBatchResponse.readEntity(classOf[String]).contains(errorMessage))
 
@@ -472,6 +472,26 @@ abstract class BatchesResourceSuiteBase extends KyuubiFunSuite
       .header(AUTHORIZATION_HEADER, basicAuthorizationHeader("anonymous"))
       .get()
     assert(response7.getStatus === 500)
+
+    val response8 = webTarget.path("api/v1/batches")
+      .queryParam("from", "0")
+      .queryParam("size", "1")
+      .queryParam("desc", "false")
+      .request(MediaType.APPLICATION_JSON_TYPE)
+      .header(AUTHORIZATION_HEADER, basicAuthorizationHeader("anonymous"))
+      .get()
+    val firstBatch = response8.readEntity(classOf[GetBatchesResponse]).getBatches.get(0)
+
+    val response9 = webTarget.path("api/v1/batches")
+      .queryParam("from", "0")
+      .queryParam("size", "1")
+      .queryParam("desc", "true")
+      .queryParam("createTime", "1")
+      .request(MediaType.APPLICATION_JSON_TYPE)
+      .header(AUTHORIZATION_HEADER, basicAuthorizationHeader("anonymous"))
+      .get()
+    val lastBatch = response9.readEntity(classOf[GetBatchesResponse]).getBatches.get(0)
+    assert(firstBatch.getCreateTime < lastBatch.getCreateTime)
   }
 
   test("negative request") {
@@ -525,7 +545,7 @@ abstract class BatchesResourceSuiteBase extends KyuubiFunSuite
     val sessionManager = fe.be.sessionManager.asInstanceOf[KyuubiSessionManager]
     val kyuubiInstance = fe.connectionUrl
 
-    assert(sessionManager.getOpenSessionCount === 0)
+    assert(sessionManager.getActiveUserSessionCount === 0)
     val batchId1 = UUID.randomUUID().toString
     val batchId2 = UUID.randomUUID().toString
 
@@ -585,7 +605,7 @@ abstract class BatchesResourceSuiteBase extends KyuubiFunSuite
 
     val restFe = fe.asInstanceOf[KyuubiRestFrontendService]
     restFe.recoverBatchSessions()
-    assert(sessionManager.getOpenSessionCount === 2)
+    assert(sessionManager.getActiveUserSessionCount === 2)
 
     val sessionHandle1 = SessionHandle.fromUUID(batchId1)
     val sessionHandle2 = SessionHandle.fromUUID(batchId2)
@@ -751,9 +771,15 @@ abstract class BatchesResourceSuiteBase extends KyuubiFunSuite
         getBatchJobSubmissionStateCounter(OperationState.ERROR)
 
     val batchId = UUID.randomUUID().toString
-    val requestObj = newSparkBatchRequest(Map(
-      "spark.master" -> "local",
-      KYUUBI_BATCH_ID_KEY -> batchId))
+    val requestObj = newBatchRequest(
+      sparkBatchTestBatchType,
+      sparkBatchTestResource.get,
+      "org.apache.spark.examples.DriverSubmissionTest",
+      "DriverSubmissionTest-" + batchId,
+      Map(
+        "spark.master" -> "local",
+        KYUUBI_BATCH_ID_KEY -> batchId),
+      Seq("120"))
 
     eventually(timeout(10.seconds)) {
       val response = webTarget.path("api/v1/batches")
@@ -766,10 +792,8 @@ abstract class BatchesResourceSuiteBase extends KyuubiFunSuite
         batch.getState === OperationState.RUNNING.toString)
     }
 
-    eventually(timeout(10.seconds)) {
-      assert(getBatchJobSubmissionStateCounter(OperationState.INITIALIZED) +
-        getBatchJobSubmissionStateCounter(OperationState.PENDING) +
-        getBatchJobSubmissionStateCounter(OperationState.RUNNING) === 1)
+    eventually(timeout(20.seconds)) {
+      assert(getBatchJobSubmissionStateCounter(OperationState.RUNNING) === 1)
     }
 
     val deleteResp = webTarget.path(s"api/v1/batches/$batchId")
@@ -868,19 +892,19 @@ abstract class BatchesResourceSuiteBase extends KyuubiFunSuite
 
     // use kyuubi.session.proxy.user
     val proxyUserResponse1 = runOpenBatchExecutor(Option(normalUser), None)
-    assert(proxyUserResponse1.getStatus === 405)
+    assert(proxyUserResponse1.getStatus === 403)
     val errorMessage = s"Failed to validate proxy privilege of anonymous for $normalUser"
     assert(proxyUserResponse1.readEntity(classOf[String]).contains(errorMessage))
 
     // it should be the same behavior as hive.server2.proxy.user
     val proxyUserResponse2 = runOpenBatchExecutor(None, Option(normalUser))
-    assert(proxyUserResponse2.getStatus === 405)
+    assert(proxyUserResponse2.getStatus === 403)
     assert(proxyUserResponse2.readEntity(classOf[String]).contains(errorMessage))
 
     // when both set, kyuubi.session.proxy.user takes precedence
     val proxyUserResponse3 =
       runOpenBatchExecutor(Option(normalUser), Option(s"${normalUser}HiveServer2"))
-    assert(proxyUserResponse3.getStatus === 405)
+    assert(proxyUserResponse3.getStatus === 403)
     assert(proxyUserResponse3.readEntity(classOf[String]).contains(errorMessage))
   }
 }

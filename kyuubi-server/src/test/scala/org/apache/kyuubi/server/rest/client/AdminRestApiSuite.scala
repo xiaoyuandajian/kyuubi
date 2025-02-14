@@ -53,7 +53,8 @@ class AdminRestApiSuite extends RestClientTestHelper {
     conf.set(KyuubiConf.AUTHENTICATION_METHOD, Seq("LDAP", "CUSTOM"))
     conf.set(KyuubiConf.GROUP_PROVIDER, "hadoop")
     val user = ldapUser
-    val engine = new EngineRef(conf.clone, user, PluginLoader.loadGroupProvider(conf), id, null)
+    val engine =
+      new EngineRef(conf.clone, user, true, PluginLoader.loadGroupProvider(conf), id, null)
 
     val engineSpace = DiscoveryPaths.makePath(
       s"kyuubi_test_${KYUUBI_VERSION}_USER_SPARK_SQL",
@@ -84,8 +85,9 @@ class AdminRestApiSuite extends RestClientTestHelper {
     assert(engines(0).getNamespace == engineSpace)
     assert(engines(0).getAttributes.get(KyuubiReservedKeys.KYUUBI_ENGINE_ID).startsWith("local-"))
 
-    val result = adminRestApi.deleteEngine("spark_sql", "user", "default", "")
-    assert(result == s"Engine ${engineSpace} is deleted successfully.")
+    // kill engine to release memory quickly
+    val result = adminRestApi.deleteEngine("spark_sql", "user", "default", "", true)
+    assert(result startsWith s"Engine ${engineSpace} refId=${id} is deleted successfully.")
 
     engines = adminRestApi.listEngines("spark_sql", "user", "default", "").asScala
     assert(engines.isEmpty)

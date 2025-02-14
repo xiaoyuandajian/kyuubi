@@ -32,10 +32,10 @@ trait WithSparkSQLEngine extends KyuubiFunSuite {
 
   protected var connectionUrl: String = _
 
-  // Affected by such configuration' default value
-  //    engine.initialize.sql='SHOW DATABASES'
-  // SPARK-35378
-  protected lazy val initJobId: Int = if (SPARK_ENGINE_RUNTIME_VERSION >= "3.2") 1 else 0
+  // Behavior is affected by the initialization SQL: 'SHOW DATABASES'
+  // SPARK-35378 (3.2.0) makes it triggers job
+  // SPARK-43124 (4.0.0) makes it avoid triggering job
+  protected val initJobId: Int = if (SPARK_ENGINE_RUNTIME_VERSION >= "4.0") 0 else 1
 
   override def beforeAll(): Unit = {
     startSparkEngine()

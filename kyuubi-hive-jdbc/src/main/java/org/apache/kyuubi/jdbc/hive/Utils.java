@@ -42,7 +42,7 @@ public class Utils {
       Arrays.asList("jdbc:hive2://", "jdbc:kyuubi://");
 
   /** If host is provided, without a port. */
-  static final String DEFAULT_PORT = "10000";
+  static final String DEFAULT_PORT = "10009";
   // To parse the intermediate URI as a Java URI, we'll give a dummy authority(dummyhost:00000).
   // Later, we'll substitute the dummy authority for a resolved authority.
   static final String dummyAuthorityString = "dummyhost:00000";
@@ -106,25 +106,47 @@ public class Utils {
    */
   static List<String> splitSqlStatement(String sql) {
     List<String> parts = new ArrayList<>();
-    int apCount = 0;
+    boolean inSingleQuote = false;
+    boolean inDoubleQuote = false;
+    boolean inComment = false;
     int off = 0;
     boolean skip = false;
 
     for (int i = 0; i < sql.length(); i++) {
       char c = sql.charAt(i);
+      if (inComment) {
+        inComment = (c != '\n');
+        continue;
+      }
       if (skip) {
         skip = false;
         continue;
       }
       switch (c) {
         case '\'':
-          apCount++;
+          if (!inDoubleQuote) {
+            inSingleQuote = !inSingleQuote;
+          }
+          break;
+        case '\"':
+          if (!inSingleQuote) {
+            inDoubleQuote = !inDoubleQuote;
+          }
+          break;
+        case '-':
+          if (!inSingleQuote && !inDoubleQuote) {
+            if (i < sql.length() - 1 && sql.charAt(i + 1) == '-') {
+              inComment = true;
+            }
+          }
           break;
         case '\\':
-          skip = true;
+          if (!inSingleQuote && !inDoubleQuote) {
+            skip = true;
+          }
           break;
         case '?':
-          if ((apCount & 1) == 0) {
+          if (!inSingleQuote && !inDoubleQuote) {
             parts.add(sql.substring(off, i));
             off = i + 1;
           }
@@ -359,8 +381,8 @@ public class Utils {
         if (port <= 0) {
           port = Integer.parseInt(Utils.DEFAULT_PORT);
         }
-        connParams.setHost(jdbcBaseURI.getHost());
-        connParams.setPort(jdbcBaseURI.getPort());
+        connParams.setHost(host);
+        connParams.setPort(port);
       }
       // We check for invalid host, port while configuring connParams with configureConnParams()
       authorityStr = connParams.getHost() + ":" + connParams.getPort();

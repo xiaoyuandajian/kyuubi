@@ -337,7 +337,7 @@ class SparkOperationSuite extends WithSparkSQLEngine with HiveMetadataTests with
   test("test fetch orientation with incremental collect mode") {
     val sql = "SELECT id FROM range(2)"
 
-    withSessionConf(Map(KyuubiConf.OPERATION_INCREMENTAL_COLLECT.key -> "true"))()() {
+    withSessionConf(Map(KyuubiConf.ENGINE_SPARK_OPERATION_INCREMENTAL_COLLECT.key -> "true"))()() {
       withSessionHandle { (client, handle) =>
         val req = new TExecuteStatementReq()
         req.setSessionHandle(handle)
@@ -514,7 +514,6 @@ class SparkOperationSuite extends WithSparkSQLEngine with HiveMetadataTests with
       assert(status.getStatusCode === TStatusCode.ERROR_STATUS)
       if (SPARK_ENGINE_RUNTIME_VERSION >= "3.4") {
         assert(errorMessage.contains("[SCHEMA_NOT_FOUND]"))
-        assert(errorMessage.contains(s"The schema `$dbName` cannot be found."))
       } else {
         assert(errorMessage.contains(s"Database '$dbName' not found"))
       }

@@ -17,10 +17,14 @@
 
 package org.apache.kyuubi.session
 
+import java.nio.file.Path
+import java.util.concurrent.ConcurrentHashMap
+
 import scala.collection.JavaConverters._
 
 import org.apache.kyuubi.{KyuubiSQLException, Logging}
 import org.apache.kyuubi.config.KyuubiConf._
+import org.apache.kyuubi.config.KyuubiReservedKeys
 import org.apache.kyuubi.config.KyuubiReservedKeys.KYUUBI_CLIENT_IP_KEY
 import org.apache.kyuubi.operation.{Operation, OperationHandle}
 import org.apache.kyuubi.operation.FetchOrientation.FetchOrientation
@@ -58,7 +62,7 @@ abstract class AbstractSession(
 
   override lazy val name: Option[String] = normalizedConf.get(SESSION_NAME.key)
 
-  final private val opHandleSet = new java.util.HashSet[OperationHandle]
+  final private val opHandleSet = ConcurrentHashMap.newKeySet[OperationHandle]()
 
   private def acquire(userAccess: Boolean): Unit = synchronized {
     if (userAccess) {
@@ -256,7 +260,12 @@ abstract class AbstractSession(
     }
   }
 
+  protected var operationalLogRootDir: Option[Path] = None
+
   override def open(): Unit = {
-    OperationLog.createOperationLogRootDirectory(this)
+    operationalLogRootDir = Option(OperationLog.createOperationLogRootDirectory(this))
   }
+
+  val isForAliveProbe: Boolean =
+    conf.get(KyuubiReservedKeys.KYUUBI_SESSION_ALIVE_PROBE).exists(_.equalsIgnoreCase("true"))
 }

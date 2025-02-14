@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.apache.kyuubi</groupId>
         <artifactId>kyuubi-parent</artifactId>
-        <version>1.9.0-SNAPSHOT</version>
+        <version>1.11.0-SNAPSHOT</version>
         <relativePath>../../pom.xml</relativePath>
     </parent>
 
@@ -123,12 +123,6 @@
 
         <dependency>
             <groupId>org.apache.kyuubi</groupId>
-            <artifactId>kyuubi-spark-authz_${scala.binary.version}</artifactId>
-            <version>${project.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>org.apache.kyuubi</groupId>
             <artifactId>kyuubi-spark-connector-tpcds_${scala.binary.version}</artifactId>
             <version>${project.version}</version>
         </dependency>
@@ -162,26 +156,6 @@
 
     <profiles>
         <profile>
-            <id>spark-3.1</id>
-            <dependencies>
-                <dependency>
-                    <groupId>org.apache.kyuubi</groupId>
-                    <artifactId>kyuubi-extension-spark-3-1_${scala.binary.version}</artifactId>
-                    <version>${project.version}</version>
-                </dependency>
-            </dependencies>
-        </profile>
-        <profile>
-            <id>spark-3.2</id>
-            <dependencies>
-                <dependency>
-                    <groupId>org.apache.kyuubi</groupId>
-                    <artifactId>kyuubi-extension-spark-3-2_${scala.binary.version}</artifactId>
-                    <version>${project.version}</version>
-                </dependency>
-            </dependencies>
-        </profile>
-        <profile>
             <id>spark-3.3</id>
             <dependencies>
                 <dependency>
@@ -192,6 +166,11 @@
                 <dependency>
                     <groupId>org.apache.kyuubi</groupId>
                     <artifactId>kyuubi-spark-connector-hive_${scala.binary.version}</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.apache.kyuubi</groupId>
+                    <artifactId>kyuubi-spark-authz_${scala.binary.version}</artifactId>
                     <version>${project.version}</version>
                 </dependency>
             </dependencies>
@@ -209,6 +188,11 @@
                     <artifactId>kyuubi-spark-connector-hive_${scala.binary.version}</artifactId>
                     <version>${project.version}</version>
                 </dependency>
+                <dependency>
+                    <groupId>org.apache.kyuubi</groupId>
+                    <artifactId>kyuubi-spark-authz_${scala.binary.version}</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
             </dependencies>
         </profile>
         <profile>
@@ -217,6 +201,26 @@
                 <dependency>
                     <groupId>org.apache.kyuubi</groupId>
                     <artifactId>kyuubi-extension-spark-3-5_${scala.binary.version}</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.apache.kyuubi</groupId>
+                    <artifactId>kyuubi-spark-connector-hive_${scala.binary.version}</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+                <dependency>
+                    <groupId>org.apache.kyuubi</groupId>
+                    <artifactId>kyuubi-spark-authz_${scala.binary.version}</artifactId>
+                    <version>${project.version}</version>
+                </dependency>
+            </dependencies>
+        </profile>
+        <profile>
+            <id>spark-4.0</id>
+            <dependencies>
+                <dependency>
+                    <groupId>org.apache.kyuubi</groupId>
+                    <artifactId>kyuubi-spark-connector-hive_${scala.binary.version}</artifactId>
                     <version>${project.version}</version>
                 </dependency>
             </dependencies>

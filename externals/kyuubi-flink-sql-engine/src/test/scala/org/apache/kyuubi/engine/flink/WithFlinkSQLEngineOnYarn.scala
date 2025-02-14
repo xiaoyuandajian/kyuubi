@@ -34,6 +34,7 @@ import org.apache.kyuubi.{KYUUBI_VERSION, KyuubiFunSuite, SCALA_COMPILE_VERSION,
 import org.apache.kyuubi.config.KyuubiConf
 import org.apache.kyuubi.config.KyuubiConf.{ENGINE_FLINK_APPLICATION_JARS, KYUUBI_HOME}
 import org.apache.kyuubi.ha.HighAvailabilityConf.HA_ADDRESSES
+import org.apache.kyuubi.util.JavaUtils
 import org.apache.kyuubi.util.command.CommandLineUtils._
 import org.apache.kyuubi.zookeeper.EmbeddedZookeeper
 import org.apache.kyuubi.zookeeper.ZookeeperConf.{ZK_CLIENT_PORT, ZK_CLIENT_PORT_ADDRESS}
@@ -104,7 +105,14 @@ trait WithFlinkSQLEngineOnYarn extends KyuubiFunSuite with WithFlinkTestResource
     zkServer.start()
     conf.set(HA_ADDRESSES, zkServer.getConnectString)
 
-    hdfsCluster = new MiniDFSCluster.Builder(new Configuration)
+    val hdfsConf = new Configuration()
+    // before HADOOP-18206 (3.4.0), HDFS MetricsLogger strongly depends on
+    // commons-logging, we should disable it explicitly, otherwise, it throws
+    // ClassNotFound: org.apache.commons.logging.impl.Log4JLogger
+    hdfsConf.set("dfs.namenode.metrics.logger.period.seconds", "0")
+    hdfsConf.set("dfs.datanode.metrics.logger.period.seconds", "0")
+
+    hdfsCluster = new MiniDFSCluster.Builder(hdfsConf)
       .numDataNodes(1)
       .checkDataNodeAddrConfig(true)
       .checkDataNodeHostConfig(true)
@@ -131,7 +139,7 @@ trait WithFlinkSQLEngineOnYarn extends KyuubiFunSuite with WithFlinkTestResource
     writer.close()
 
     val envs = scala.collection.mutable.Map[String, String]()
-    val kyuubiExternals = Utils.getCodeSourceLocation(getClass)
+    val kyuubiExternals = JavaUtils.getCodeSourceLocation(getClass)
       .split("externals").head
     val flinkHome = {
       val candidates = Paths.get(kyuubiExternals, "externals", "kyuubi-download", "target")
@@ -239,7 +247,7 @@ trait WithFlinkSQLEngineOnYarn extends KyuubiFunSuite with WithFlinkTestResource
         .find(Files.exists(_)).map(_.toAbsolutePath.toFile.getCanonicalPath)
     }.orElse {
       // 3. get the main resource from dev environment
-      val cwd = Utils.getCodeSourceLocation(getClass).split("externals")
+      val cwd = JavaUtils.getCodeSourceLocation(getClass).split("externals")
       assert(cwd.length > 1)
       Option(Paths.get(cwd.head, "externals", module, "target", jarName))
         .map(_.toAbsolutePath.toFile.getCanonicalPath)

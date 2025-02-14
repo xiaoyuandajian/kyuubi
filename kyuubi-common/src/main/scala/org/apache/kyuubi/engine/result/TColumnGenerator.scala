@@ -34,19 +34,17 @@ trait TColumnGenerator[RowT] extends TRowSetColumnGetter[RowT] {
     val ret = new JArrayList[T](rowSize)
     val nulls = new JBitSet()
     var idx = 0
-    while (idx < rowSize) {
-      val row = rows(idx)
-      val isNull = isColumnNullAt(row, ordinal)
-      if (isNull) {
+    val isConvertFuncNull = convertFunc == null
+    rows.foreach { row =>
+      val value = if (isColumnNullAt(row, ordinal)) {
         nulls.set(idx, true)
-        ret.add(defaultVal)
+        defaultVal
+      } else if (isConvertFuncNull) {
+        getColumnAs[T](row, ordinal)
       } else {
-        val value = Option(convertFunc) match {
-          case Some(f) => f(row, ordinal)
-          case _ => getColumnAs[T](row, ordinal)
-        }
-        ret.add(value)
+        convertFunc(row, ordinal)
       }
+      ret.add(value)
       idx += 1
     }
     (ret, ByteBuffer.wrap(nulls.toByteArray))
@@ -62,18 +60,27 @@ trait TColumnGenerator[RowT] extends TRowSetColumnGetter[RowT] {
     TColumn.byteVal(new TByteColumn(values, nulls))
   }
 
-  def asShortTColumn(rows: Seq[RowT], ordinal: Int): TColumn = {
-    val (values, nulls) = getColumnToList[JShort](rows, ordinal, 0.toShort)
+  def asShortTColumn(
+      rows: Seq[RowT],
+      ordinal: Int,
+      convertFunc: (RowT, Int) => JShort = null): TColumn = {
+    val (values, nulls) = getColumnToList[JShort](rows, ordinal, 0.toShort, convertFunc)
     TColumn.i16Val(new TI16Column(values, nulls))
   }
 
-  def asIntegerTColumn(rows: Seq[RowT], ordinal: Int): TColumn = {
-    val (values, nulls) = getColumnToList[Integer](rows, ordinal, 0)
+  def asIntegerTColumn(
+      rows: Seq[RowT],
+      ordinal: Int,
+      convertFunc: (RowT, Int) => Integer = null): TColumn = {
+    val (values, nulls) = getColumnToList[Integer](rows, ordinal, 0, convertFunc)
     TColumn.i32Val(new TI32Column(values, nulls))
   }
 
-  def asLongTColumn(rows: Seq[RowT], ordinal: Int): TColumn = {
-    val (values, nulls) = getColumnToList[JLong](rows, ordinal, 0.toLong)
+  def asLongTColumn(
+      rows: Seq[RowT],
+      ordinal: Int,
+      convertFunc: (RowT, Int) => JLong = null): TColumn = {
+    val (values, nulls) = getColumnToList[JLong](rows, ordinal, 0.toLong, convertFunc)
     TColumn.i64Val(new TI64Column(values, nulls))
   }
 

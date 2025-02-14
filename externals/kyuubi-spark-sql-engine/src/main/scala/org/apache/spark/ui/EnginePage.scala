@@ -20,7 +20,6 @@ package org.apache.spark.ui
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets.UTF_8
 import java.util.Date
-import javax.servlet.http.HttpServletRequest
 
 import scala.collection.JavaConverters.mapAsScalaMapConverter
 import scala.collection.mutable
@@ -33,10 +32,21 @@ import org.apache.spark.ui.UIUtils._
 import org.apache.kyuubi._
 import org.apache.kyuubi.engine.spark.events.{SessionEvent, SparkOperationEvent}
 
-case class EnginePage(parent: EngineTab) extends WebUIPage("") {
+abstract class EnginePage(parent: EngineTab) extends WebUIPage("") {
   private val store = parent.store
 
-  override def render(request: HttpServletRequest): Seq[Node] = {
+  def dispatchRender(req: AnyRef): Seq[Node] = req match {
+    case reqLike: HttpServletRequestLike =>
+      this.render0(reqLike)
+    case javaxReq: javax.servlet.http.HttpServletRequest =>
+      this.render0(HttpServletRequestLike.fromJavax(javaxReq))
+    case jakartaReq: jakarta.servlet.http.HttpServletRequest =>
+      this.render0(HttpServletRequestLike.fromJakarta(jakartaReq))
+    case unsupported =>
+      throw new IllegalArgumentException(s"Unsupported class ${unsupported.getClass.getName}")
+  }
+
+  def render0(request: HttpServletRequestLike): Seq[Node] = {
     val onlineSession = new mutable.ArrayBuffer[SessionEvent]()
     val closedSession = new mutable.ArrayBuffer[SessionEvent]()
 
@@ -77,7 +87,7 @@ case class EnginePage(parent: EngineTab) extends WebUIPage("") {
           runningSqlStat.toSeq,
           completedSqlStat.toSeq,
           failedSqlStat.toSeq)
-    UIUtils.headerSparkPage(request, parent.name, content, parent)
+    SparkUIUtils.headerSparkPage(request, parent.name, content, parent)
   }
 
   private def generateBasicStats(): Seq[Node] = {
@@ -131,8 +141,8 @@ case class EnginePage(parent: EngineTab) extends WebUIPage("") {
     </ul>
   }
 
-  private def stop(request: HttpServletRequest): Seq[Node] = {
-    val basePath = UIUtils.prependBaseUri(request, parent.basePath)
+  private def stop(request: HttpServletRequestLike): Seq[Node] = {
+    val basePath = SparkUIUtils.prependBaseUri(request, parent.basePath)
     if (parent.killEnabled) {
       val confirmForceStop =
         s"if (window.confirm('Are you sure you want to stop kyuubi engine immediately ?')) " +
@@ -160,7 +170,7 @@ case class EnginePage(parent: EngineTab) extends WebUIPage("") {
 
   /** Generate stats of running statements for the engine */
   private def generateStatementStatsTable(
-      request: HttpServletRequest,
+      request: HttpServletRequestLike,
       running: Seq[SparkOperationEvent],
       completed: Seq[SparkOperationEvent],
       failed: Seq[SparkOperationEvent]): Seq[Node] = {
@@ -241,7 +251,7 @@ case class EnginePage(parent: EngineTab) extends WebUIPage("") {
   }
 
   private def statementStatsTable(
-      request: HttpServletRequest,
+      request: HttpServletRequestLike,
       sqlTableTag: String,
       parent: EngineTab,
       data: Seq[SparkOperationEvent]): Seq[Node] = {
@@ -255,7 +265,7 @@ case class EnginePage(parent: EngineTab) extends WebUIPage("") {
         parent,
         data,
         "kyuubi",
-        UIUtils.prependBaseUri(request, parent.basePath),
+        SparkUIUtils.prependBaseUri(request, parent.basePath),
         s"${sqlTableTag}-table").table(sqlTablePage)
     } catch {
       case e @ (_: IllegalArgumentException | _: IndexOutOfBoundsException) =>
@@ -270,7 +280,7 @@ case class EnginePage(parent: EngineTab) extends WebUIPage("") {
 
   /** Generate stats of online sessions for the engine */
   private def generateSessionStatsTable(
-      request: HttpServletRequest,
+      request: HttpServletRequestLike,
       online: Seq[SessionEvent],
       closed: Seq[SessionEvent]): Seq[Node] = {
     val content = mutable.ListBuffer[Node]()
@@ -326,7 +336,7 @@ case class EnginePage(parent: EngineTab) extends WebUIPage("") {
   }
 
   private def sessionTable(
-      request: HttpServletRequest,
+      request: HttpServletRequestLike,
       sessionTage: String,
       parent: EngineTab,
       data: Seq[SessionEvent]): Seq[Node] = {
@@ -338,7 +348,7 @@ case class EnginePage(parent: EngineTab) extends WebUIPage("") {
         parent,
         data,
         "kyuubi",
-        UIUtils.prependBaseUri(request, parent.basePath),
+        SparkUIUtils.prependBaseUri(request, parent.basePath),
         s"${sessionTage}-table").table(sessionPage)
     } catch {
       case e @ (_: IllegalArgumentException | _: IndexOutOfBoundsException) =>
@@ -352,7 +362,7 @@ case class EnginePage(parent: EngineTab) extends WebUIPage("") {
   }
 
   private class SessionStatsPagedTable(
-      request: HttpServletRequest,
+      request: HttpServletRequestLike,
       parent: EngineTab,
       data: Seq[SessionEvent],
       subPath: String,
@@ -402,6 +412,8 @@ case class EnginePage(parent: EngineTab) extends WebUIPage("") {
           ("Start Time", true, None),
           ("Finish Time", true, None),
           ("Duration", true, None),
+          ("Run Time", true, None),
+          ("CPU Time", true, None),
           ("Total Statements", true, None))
 
       headerStatRow(
@@ -416,7 +428,7 @@ case class EnginePage(parent: EngineTab) extends WebUIPage("") {
 
     override def row(session: SessionEvent): Seq[Node] = {
       val sessionLink = "%s/%s/session/?id=%s".format(
-        UIUtils.prependBaseUri(request, parent.basePath),
+        SparkUIUtils.prependBaseUri(request, parent.basePath),
         parent.prefix,
         session.sessionId)
       <tr>
@@ -428,6 +440,8 @@ case class EnginePage(parent: EngineTab) extends WebUIPage("") {
         <td> {formatDate(session.startTime)} </td>
         <td> {if (session.endTime > 0) formatDate(session.endTime)} </td>
         <td> {formatDuration(session.duration)} </td>
+        <td> {formatDuration(session.sessionRunTime)} </td>
+        <td> {formatDuration(session.sessionCpuTime / 1000000)} </td>
         <td> {session.totalOperations} </td>
       </tr>
     }
@@ -436,7 +450,7 @@ case class EnginePage(parent: EngineTab) extends WebUIPage("") {
 }
 
 private class StatementStatsPagedTable(
-    request: HttpServletRequest,
+    request: HttpServletRequestLike,
     parent: EngineTab,
     data: Seq[SparkOperationEvent],
     subPath: String,
@@ -484,6 +498,8 @@ private class StatementStatsPagedTable(
         ("Create Time", true, None),
         ("Finish Time", true, None),
         ("Duration", true, None),
+        ("Run Time", true, None),
+        ("CPU Time", true, None),
         ("Statement", true, None),
         ("State", true, None),
         ("Query Details", true, None),
@@ -501,7 +517,7 @@ private class StatementStatsPagedTable(
 
   override def row(event: SparkOperationEvent): Seq[Node] = {
     val sessionLink = "%s/%s/session/?id=%s".format(
-      UIUtils.prependBaseUri(request, parent.basePath),
+      SparkUIUtils.prependBaseUri(request, parent.basePath),
       parent.prefix,
       event.sessionId)
     <tr>
@@ -523,6 +539,8 @@ private class StatementStatsPagedTable(
       <td >
         {formatDuration(event.duration)}
       </td>
+      <td> {formatDuration(event.operationRunTime.getOrElse(0L))} </td>
+      <td> {formatDuration(event.operationCpuTime.getOrElse(0L) / 1000000)} </td>
       <td>
         <span class="description-input">
           {event.statement}
@@ -536,7 +554,7 @@ private class StatementStatsPagedTable(
       if (event.executionId.isDefined) {
         <a href={
           "%s/SQL/execution/?id=%s".format(
-            UIUtils.prependBaseUri(request, parent.basePath),
+            SparkUIUtils.prependBaseUri(request, parent.basePath),
             event.executionId.get)
         }>
           {event.executionId.get}
@@ -592,6 +610,8 @@ private class SessionStatsTableDataSource(
       case "Start Time" => Ordering.by(_.startTime)
       case "Finish Time" => Ordering.by(_.endTime)
       case "Duration" => Ordering.by(_.duration)
+      case "Run Time" => Ordering.by(_.sessionRunTime)
+      case "CPU Time" => Ordering.by(_.sessionCpuTime)
       case "Total Statements" => Ordering.by(_.totalOperations)
       case unknownColumn => throw new IllegalArgumentException(s"Unknown column: $unknownColumn")
     }
@@ -627,6 +647,8 @@ private class StatementStatsTableDataSource(
       case "Create Time" => Ordering.by(_.createTime)
       case "Finish Time" => Ordering.by(_.completeTime)
       case "Duration" => Ordering.by(_.duration)
+      case "Run Time" => Ordering.by(_.operationRunTime.getOrElse(0L))
+      case "CPU Time" => Ordering.by(_.operationCpuTime.getOrElse(0L))
       case "Statement" => Ordering.by(_.statement)
       case "State" => Ordering.by(_.state)
       case "Query Details" => Ordering.by(_.executionId)
@@ -647,7 +669,7 @@ private object TableSourceUtil {
    * Returns parameter of this table.
    */
   def getRequestTableParameters(
-      request: HttpServletRequest,
+      request: HttpServletRequestLike,
       tableTag: String,
       defaultSortColumn: String): (String, Boolean, Int) = {
     val parameterSortColumn = request.getParameter(s"$tableTag.sort")
@@ -666,7 +688,7 @@ private object TableSourceUtil {
   /**
    * Returns parameters of other tables in the page.
    */
-  def getRequestParameterOtherTable(request: HttpServletRequest, tableTag: String): String = {
+  def getRequestParameterOtherTable(request: HttpServletRequestLike, tableTag: String): String = {
     request.getParameterMap.asScala
       .filterNot(_._1.startsWith(tableTag))
       .map(parameter => parameter._1 + "=" + parameter._2(0))

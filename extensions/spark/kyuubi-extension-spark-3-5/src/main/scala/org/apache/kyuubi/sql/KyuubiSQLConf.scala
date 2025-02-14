@@ -18,7 +18,6 @@
 package org.apache.kyuubi.sql
 
 import org.apache.spark.network.util.ByteUnit
-import org.apache.spark.sql.internal.SQLConf
 import org.apache.spark.sql.internal.SQLConf._
 
 object KyuubiSQLConf {
@@ -29,27 +28,6 @@ object KyuubiSQLConf {
       .version("1.2.0")
       .booleanConf
       .createWithDefault(true)
-
-  val INSERT_REPARTITION_NUM =
-    buildConf("spark.sql.optimizer.insertRepartitionNum")
-      .doc(s"The partition number if ${INSERT_REPARTITION_BEFORE_WRITE.key} is enabled. " +
-        s"If AQE is disabled, the default value is ${SQLConf.SHUFFLE_PARTITIONS.key}. " +
-        "If AQE is enabled, the default value is none that means depend on AQE. " +
-        "This config is used for Spark 3.1 only.")
-      .version("1.2.0")
-      .intConf
-      .createOptional
-
-  val DYNAMIC_PARTITION_INSERTION_REPARTITION_NUM =
-    buildConf("spark.sql.optimizer.dynamicPartitionInsertionRepartitionNum")
-      .doc(s"The partition number of each dynamic partition if " +
-        s"${INSERT_REPARTITION_BEFORE_WRITE.key} is enabled. " +
-        "We will repartition by dynamic partition columns to reduce the small file but that " +
-        "can cause data skew. This config is to extend the partition of dynamic " +
-        "partition column to avoid skew but may generate some small files.")
-      .version("1.2.0")
-      .intConf
-      .createWithDefault(100)
 
   val FORCE_SHUFFLE_BEFORE_JOIN =
     buildConf("spark.sql.optimizer.forceShuffleBeforeJoin.enabled")
@@ -67,16 +45,6 @@ object KyuubiSQLConf {
         "then the final stage config should be: " +
         "`spark.sql.finalStage.adaptive.advisoryPartitionSizeInBytes`.")
       .version("1.2.0")
-      .booleanConf
-      .createWithDefault(false)
-
-  val SQL_CLASSIFICATION = "spark.sql.analyzer.classification"
-  val SQL_CLASSIFICATION_ENABLED =
-    buildConf("spark.sql.analyzer.classification.enabled")
-      .doc("When true, allows Kyuubi engine to judge this SQL's classification " +
-        s"and set `$SQL_CLASSIFICATION` back into sessionConf. " +
-        "Through this configuration item, Spark can optimizing configuration dynamic")
-      .version("1.4.0")
       .booleanConf
       .createWithDefault(false)
 
@@ -103,7 +71,7 @@ object KyuubiSQLConf {
     buildConf("spark.sql.optimizer.rebalanceBeforeZorder.enabled")
       .doc("When true, we do a rebalance before zorder in case data skew. " +
         "Note that, if the insertion is dynamic partition we will use the partition " +
-        "columns to rebalance. Note that, this config only affects with Spark 3.3.x")
+        "columns to rebalance.")
       .version("1.6.0")
       .booleanConf
       .createWithDefault(false)
@@ -112,8 +80,7 @@ object KyuubiSQLConf {
     buildConf("spark.sql.optimizer.rebalanceZorderColumns.enabled")
       .doc(s"When true and ${REBALANCE_BEFORE_ZORDER.key} is true, we do rebalance before " +
         s"Z-Order. If it's dynamic partition insert, the rebalance expression will include " +
-        s"both partition columns and Z-Order columns. Note that, this config only " +
-        s"affects with Spark 3.3.x")
+        s"both partition columns and Z-Order columns.")
       .version("1.6.0")
       .booleanConf
       .createWithDefault(false)
@@ -123,7 +90,7 @@ object KyuubiSQLConf {
       .doc(s"When true and ${REBALANCE_BEFORE_ZORDER.key} is true, we do two phase rebalance " +
         s"before Z-Order for the dynamic partition write. The first phase rebalance using " +
         s"dynamic partition column; The second phase rebalance using dynamic partition column + " +
-        s"Z-Order columns. Note that, this config only affects with Spark 3.3.x")
+        s"Z-Order columns.")
       .version("1.6.0")
       .booleanConf
       .createWithDefault(false)
@@ -131,8 +98,7 @@ object KyuubiSQLConf {
   val ZORDER_USING_ORIGINAL_ORDERING_ENABLED =
     buildConf("spark.sql.optimizer.zorderUsingOriginalOrdering.enabled")
       .doc(s"When true and ${REBALANCE_BEFORE_ZORDER.key} is true, we do sort by " +
-        s"the original ordering i.e. lexicographical order. Note that, this config only " +
-        s"affects with Spark 3.3.x")
+        s"the original ordering i.e. lexicographical order.")
       .version("1.6.0")
       .booleanConf
       .createWithDefault(false)
